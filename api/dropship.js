@@ -111,19 +111,30 @@ export default async function handler(req, res) {
       [ch.field, "=", channelValue],
     ]));
     const orders = (await erpGet(`/api/resource/Sales Order?fields=["name","transaction_date","customer","grand_total"]&filters=${oFilters}&limit_page_length=0`) || [])
-      .filter(o => isMasked(o.customer));
+      .filter(o => isMasked(o.customer))
+      .sort((a, b) => String(b.transaction_date).localeCompare(String(a.transaction_date))); // newest first (graceful if truncated)
     const dateOf = {}, grand = {};
     orders.forEach(o => { dateOf[o.name] = ymd8(o.transaction_date); grand[o.name] = Number(o.grand_total) || 0; });
 
-    // 2) their line items (batched IN queries on parent)
+    // 2) line items — read via each order's document. Frappe does NOT allow listing a child
+    //    table (Sales Order Item) directly over the API regardless of role, so we open each
+    //    Sales Order and take its embedded .items. Concurrency pool + a time budget keep it safe.
     const names = orders.map(o => o.name);
     const lines = [];
-    for (let i = 0; i < names.length; i += 80) {
-      const chunk = names.slice(i, i + 80);
-      const lf = encodeURIComponent(JSON.stringify([["parent", "in", chunk], ["parenttype", "=", "Sales Order"]]));
-      const part = await erpGet(`/api/resource/Sales Order Item?fields=["parent","item_code","qty","amount"]&filters=${lf}&limit_page_length=0`);
-      if (part) lines.push(...part);
+    const started = Date.now();
+    const CONC = 40, BUDGET_MS = 9000; // stay under the platform timeout; newest orders first so any cutoff hits oldest days
+    let idx = 0;
+    async function worker() {
+      while (idx < names.length && Date.now() - started < BUDGET_MS) {
+        const nm = names[idx++];
+        const doc = await erpGet(`/api/resource/Sales Order/${encodeURIComponent(nm)}`).catch(() => null);
+        if (doc && Array.isArray(doc.items)) {
+          for (const it of doc.items) lines.push({ parent: nm, item_code: it.item_code, qty: it.qty, amount: it.amount });
+        }
+      }
     }
+    await Promise.all(Array.from({ length: Math.min(CONC, names.length) }, worker));
+    const ordersRead = Math.min(idx, names.length);
 
     // 3) split each order's grand_total across its lines by line amount, so per-line value is
     //    tax-inclusive and the day/product totals reconcile to what customers actually paid.
@@ -148,8 +159,10 @@ export default async function handler(req, res) {
       orders: orders.length, rows,
       ...(debug ? { debug: {
         detectedChannelField: ch.field, channelValue, allChannelValues: ch.values, channelHits: ch.hits,
-        orderCount: orders.length, lineCount: lines.length,
+        orderCount: orders.length, ordersRead, lineCount: lines.length,
+        truncated: ordersRead < orders.length,
         grandTotal: Math.round(orders.reduce((a, o) => a + (Number(o.grand_total) || 0), 0)),
+        elapsedMs: Date.now() - started,
         sampleOrders: orders.slice(0, 5),
       } } : {}),
     };

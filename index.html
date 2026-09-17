@@ -576,8 +576,11 @@ function ingestText(name, text){
   }
   const mkt="myntra", ch="sor", b=bucket(mkt,ch);
   if(type==="prices"){
-    const pc=priceCols(header); MASTER=normPrices(objs,pc); b.prices=MASTER;
-    return {name, type, msg:`product master / SP sheet · ${MASTER.n} rows priced · SP=<b>${pc.valCol}</b> · matched on ${pc.idCols.length} id column(s)`};
+    // Don't set MASTER here — a workbook can hold several price-like tabs (e.g. an FSN or ASIN
+    // mini-sheet). Return the candidate; applyBestMaster() keeps the richest one so a small tab
+    // can't clobber the full mapping.
+    const pc=priceCols(header); const m=normPrices(objs,pc);
+    return {name, type, master:m, msg:`product master / SP sheet · ${m.n} rows priced · SP=<b>${pc.valCol}</b> · matched on ${pc.idCols.length} id column(s)`};
   }
   if(type==="sales"){
     const rows=normSales(objs); const dates=new Set(rows.map(r=>r.d));
@@ -585,6 +588,16 @@ function ingestText(name, text){
     const ds=[...dates].sort();
     return {name, type, mkt, ch, msg:`sales · ${rows.length} rows · ${ds.length} day(s) ${ymd(ds[0])}${ds.length>1?" → "+ymd(ds[ds.length-1]):""}`};
   }
+}
+
+// From a batch of ingest results, keep the RICHEST price sheet as MASTER (most id columns,
+// then most rows priced) — so a small FSN/ASIN tab in a multi-tab workbook can't overwrite
+// the full Selling-price mapping.
+function applyBestMaster(results){
+  const cands=(results||[]).filter(r=>r&&r.type==="prices"&&r.master&&r.master.idCols);
+  if(!cands.length) return false;
+  cands.sort((a,b)=>(b.master.idCols.length-a.master.idCols.length)||((b.master.n||0)-(a.master.n||0)));
+  MASTER=cands[0].master; bucket("myntra","sor").prices=MASTER; return true;
 }
 
 /* ---- filtering ----------------------------------------------------------- */
@@ -677,17 +690,17 @@ function emptyState(){
 
 /* ---- three-tier nav ------------------------------------------------------ */
 function dropshipActive(){ return CONCRETE_MKTS.some(m=>channelHasData(m,"dropship")); }
+// Amazon is SOR-only (period, no dropship yet); Myntra/Flipkart get Overall + SOR + Dropship,
+// where Overall = SOR + Dropship of that same marketplace.
+function channelsFor(mkt){ return mkt==="amazon" ? CHANNELS.filter(x=>x.id==="sor") : CHANNELS; }
 function buildNav(){
   const mt=$("#mktTabs"); mt.innerHTML="";
-  MARKETPLACES.forEach(x=>{ const has=x.id==="overall"?CONCRETE_MKTS.some(marketplaceHasData):marketplaceHasData(x.id);
+  MARKETPLACES.forEach(x=>{ const has=marketplaceHasData(x.id);
     const b=el("button","mtab"+(x.id===SEL.mkt?" active":"")+(has?"":" dim"), x.name+'<span class="dot"></span>'); b.dataset.mkt=x.id; mt.appendChild(b); });
-  // Until Dropship is live, the channel "Overall" == SOR, so hide it.
-  if(SEL.ch==="overall" && !dropshipActive()) SEL.ch="sor";
-  const chans = dropshipActive() ? CHANNELS : CHANNELS.filter(x=>x.id!=="overall");
+  const chans = channelsFor(SEL.mkt);
+  if(!chans.some(c=>c.id===SEL.ch)) SEL.ch="sor";   // Amazon (or a stale sel) falls back to SOR
   const ct=$("#chTabs"); ct.innerHTML="";
-  chans.forEach(x=>{ let has;
-    if(SEL.mkt==="overall") has=x.id==="overall"?CONCRETE_MKTS.some(marketplaceHasData):CONCRETE_MKTS.some(m=>channelHasData(m,x.id));
-    else has=x.id==="overall"?marketplaceHasData(SEL.mkt):channelHasData(SEL.mkt,x.id);
+  chans.forEach(x=>{ const has = x.id==="overall" ? marketplaceHasData(SEL.mkt) : channelHasData(SEL.mkt,x.id);
     const b=el("button","ctab"+(x.id===SEL.ch?" active":"")+(has?"":" dim"), x.name); b.dataset.ch=x.id; ct.appendChild(b); });
 }
 function ensureSelHasData(){
@@ -1152,14 +1165,16 @@ async function fileToSheets(f){
   return [{sheet:null, csv:await f.text()}];
 }
 async function handleFiles(files){
-  let any=false, dest=null;
+  let any=false, dest=null, all=[];
   for(const f of files){
     let sheets; try{ sheets=await fileToSheets(f); }catch(e){ logIngest({name:f.name,type:null,msg:e.message}); continue; }
     const results=sheets.map(s=>{ const nm=f.name+(s.sheet&&sheets.length>1?" · "+s.sheet:""); try{ return ingestText(nm, s.csv); }catch(e){ return {name:nm,type:null,msg:e.message}; } });
+    all.push(...results);
     const good=results.filter(r=>GOOD_TYPES.has(r.type));
     (good.length?good:results).forEach(logIngest);   // hide "unrecognised" noise when another sheet worked
-    good.forEach(res=>{ any=true; if(res.mkt) dest={mkt:res.mkt,ch:res.ch}; });
+    good.forEach(res=>{ any=true; if(res.mkt && res.type!=="prices") dest={mkt:res.mkt,ch:res.ch}; }); // don't jump tabs just for a price sheet
   }
+  applyBestMaster(all);   // pick the richest price tab across everything uploaded
   if(any){ if(dest){ SEL.mkt=dest.mkt; SEL.ch=dest.ch; } saveStore(); buildNav(); syncActive(); refreshFilterOptions(); showCurrentMonth(); toast("Data loaded & saved locally — publish to share with the team"); }
 }
 
@@ -1239,7 +1254,8 @@ function wire(){
 const IS_LOCAL=["localhost","127.0.0.1"].includes(location.hostname);
 async function loadSampleSeed(){ if(!IS_LOCAL) return false;
   try{ const man=await fetch("/sample-data/manifest.json",{cache:"no-store"}); if(!man.ok) return false; const {files}=await man.json();
-    for(const f of files){ const t=await fetch("/sample-data/"+encodeURIComponent(f)).then(r=>r.text()); ingestText(f,t); } return true;
+    const results=[]; for(const f of files){ const t=await fetch("/sample-data/"+encodeURIComponent(f)).then(r=>r.text()); results.push(ingestText(f,t)); }
+    applyBestMaster(results); return true;
   }catch(e){ return false; } }
 // Local persistence — uploaded sheets survive reloads until replaced (deployed truth is the Blob).
 const LS_KEY="tenx_mkt_store_v2";
