@@ -100,6 +100,7 @@
   .chip{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600}
   .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
   .spacer{flex:1}
+  .periodpill{display:inline-flex;align-items:center;height:34px;padding:0 13px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--ink);font-size:13px;font-weight:650;white-space:nowrap}
   .btn.reset{color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft);font-weight:700}
   .btn.reset:hover{background:var(--accent);border-color:var(--accent);color:#fff}
   .filters input[type=date]{cursor:pointer;min-width:140px}
@@ -297,6 +298,7 @@
   </div>
 
   <div class="filters" id="filters">
+    <div class="fgroup" id="amzPeriod" hidden><label>Period (Amazon reports totals)</label><span class="periodpill" id="amzPeriodVal">—</span></div>
     <div class="fgroup datef"><label>Quick range</label>
       <div class="presets" id="presets">
         <button class="chip" data-preset="today">Today</button>
@@ -660,6 +662,9 @@ function render(){
   const hasData = isAmazon ? !!(az&&az.rows&&az.rows.length) : DATA.sales.length>0;
   $("#filters").style.display = hasData ? "" : "none";
   document.querySelectorAll(".datef").forEach(e=>e.style.display = isAmazon?"none":"");   // only Amazon (period) has no dates
+  // Amazon reports one period (no day-level) — swap the date controls for a read-only Period pill
+  const amzP=$("#amzPeriod"); if(amzP){ amzP.hidden = !isAmazon;
+    if(isAmazon){ const per=az&&az.period; $("#amzPeriodVal").textContent = per?`${dlabel(per.from)} – ${dlabel(per.to)}`:"—"; } }
   // Amazon is product-level only (no day-level) — hide the Overview/Products sub-tabs
   ["viewTabs","subSep","viewLbl"].forEach(id=>{ const e=$("#"+id); if(e) e.style.display = isAmazon ? "none" : ""; });
   const app=$("#app"); app.innerHTML="";
@@ -1127,7 +1132,8 @@ function buildCatToggle(){
   const opts=[{v:"all",t:"Overall"}].concat(cats.map(c=>({v:c,t:c})));
   cont.innerHTML=opts.map(o=>`<button class="chip${FILTERS.cat===o.v?" active":""}" data-cat="${o.v}">${o.t}</button>`).join("");
 }
-function showCurrentMonth(){ const cm=currentMonth(); if(cm){ setMonth(cm); } else { FILTERS.from=FILTERS.to=null; render(); } }
+// Default landing range = MTD (month-to-date of the latest data), for every marketplace/channel.
+function showCurrentMonth(){ const ds=salesDates(); if(ds.length){ applyPreset("mtd"); } else { FILTERS.from=FILTERS.to=null; render(); } }
 // Quick ranges anchor to the latest date that has data (so a preset always lands on real data).
 function applyPreset(p){ const ds=salesDates(); if(!ds.length) return; const last=ds[ds.length-1];
   const ymdOf=d=>""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
