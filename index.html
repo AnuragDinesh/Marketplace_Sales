@@ -81,9 +81,15 @@
   .ctab:hover{border-color:var(--accent)}
   .ctab.active{background:var(--accent);border-color:var(--accent);color:#fff}
   .ctab.dim{color:var(--muted);opacity:.7}
-  .tabs{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
-  .tab{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 15px;border-radius:22px;font-size:12.5px;font-weight:650;white-space:nowrap;cursor:pointer}
-  .tab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+  /* sub-nav row: channel pills + a distinct segmented View control (so levels read as a hierarchy) */
+  .subnav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 15px}
+  .chtabs{margin:0}
+  .subsep{width:1px;height:20px;background:var(--line);flex:0 0 auto}
+  .viewlbl{font-size:10px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+  .viewseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel-2)}
+  .vtab{border:0;border-left:1px solid var(--line);background:transparent;color:var(--ink-2);font:inherit;font-size:12.5px;font-weight:650;padding:7px 17px;cursor:pointer;white-space:nowrap}
+  .vtab:first-child{border-left:0}
+  .vtab.active{background:var(--accent);color:#fff}
 
   /* filter bar */
   .filters{display:flex;gap:9px 12px;align-items:flex-end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-bottom:13px;box-shadow:var(--shadow)}
@@ -94,6 +100,10 @@
   .chip{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600}
   .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
   .spacer{flex:1}
+  .btn.reset{color:var(--accent-ink);border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .btn.reset:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+  .filters input[type=date]{cursor:pointer;min-width:140px}
+  .filters input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.7}
   /* align all filter controls to one row height */
   .filters .fgroup{justify-content:flex-end}
   .filters select,.filters input[type=date],.filters input[type=search],.filters .chip,.filters .ms-btn,.filters .presets{height:34px}
@@ -276,28 +286,35 @@
   </div>
 
   <div class="mkttabs" id="mktTabs"></div>
-  <div class="chtabs" id="chTabs"></div>
-  <div class="tabs" id="viewTabs">
-    <button class="tab active" data-view="overview">Overview</button>
-    <button class="tab" data-view="products">Products</button>
+  <div class="subnav">
+    <div class="chtabs" id="chTabs"></div>
+    <span class="subsep" id="subSep"></span>
+    <span class="viewlbl" id="viewLbl">View</span>
+    <div class="viewseg" id="viewTabs">
+      <button class="vtab active" data-view="overview">Overview</button>
+      <button class="vtab" data-view="products">Products</button>
+    </div>
   </div>
 
   <div class="filters" id="filters">
-    <div class="fgroup datef"><label>Month</label><select id="fMonth"></select></div>
-    <div class="fgroup datef"><label>From</label><input type="date" id="fFrom"></div>
-    <div class="fgroup datef"><label>To</label><input type="date" id="fTo"></div>
-    <div class="fgroup datef"><label>Quick</label>
+    <div class="fgroup datef"><label>Quick range</label>
       <div class="presets" id="presets">
-        <button class="chip" data-preset="mtd">MTD</button>
+        <button class="chip" data-preset="today">Today</button>
+        <button class="chip" data-preset="yesterday">Yesterday</button>
         <button class="chip" data-preset="7">Last 7 days</button>
-        <button class="chip" data-preset="all">All time</button>
+        <button class="chip" data-preset="mtd">MTD</button>
+        <button class="chip" data-preset="ytd">YTD</button>
+        <button class="chip" data-preset="all">All</button>
       </div>
     </div>
+    <div class="fgroup datef"><label>From</label><input type="date" id="fFrom"></div>
+    <div class="fgroup datef"><label>To</label><input type="date" id="fTo"></div>
+    <div class="fgroup datef"><label>Jump to month</label><select id="fMonth"></select></div>
     <div class="fgroup"><label>Category</label><div class="presets" id="catToggle"></div></div>
     <div class="fgroup"><label>Products</label><span id="msProd"></span></div>
     <div class="fgroup"><label>Colours</label><span id="msColour"></span></div>
     <div class="spacer"></div>
-    <div class="fgroup"><label>&nbsp;</label><button class="btn ghost" id="resetBtn">Reset</button></div>
+    <div class="fgroup"><label>&nbsp;</label><button class="btn reset" id="resetBtn">↺ Reset filters</button></div>
   </div>
 
   <div id="app"></div>
@@ -643,7 +660,8 @@ function render(){
   const hasData = isAmazon ? !!(az&&az.rows&&az.rows.length) : DATA.sales.length>0;
   $("#filters").style.display = hasData ? "" : "none";
   document.querySelectorAll(".datef").forEach(e=>e.style.display = isAmazon?"none":"");   // only Amazon (period) has no dates
-  $("#viewTabs").style.display = isAmazon ? "none" : "";   // Amazon is product-level only (no day-level)
+  // Amazon is product-level only (no day-level) — hide the Overview/Products sub-tabs
+  ["viewTabs","subSep","viewLbl"].forEach(id=>{ const e=$("#"+id); if(e) e.style.display = isAmazon ? "none" : ""; });
   const app=$("#app"); app.innerHTML="";
   if(!hasData){ app.appendChild(SEL.ch==="dropship" ? dropshipEmpty() : emptyState()); return; }
   if(SEL.ch==="dropship" && STORE[SEL.mkt] && STORE[SEL.mkt].dropship && STORE[SEL.mkt].dropship.sample){
@@ -1110,10 +1128,16 @@ function buildCatToggle(){
   cont.innerHTML=opts.map(o=>`<button class="chip${FILTERS.cat===o.v?" active":""}" data-cat="${o.v}">${o.t}</button>`).join("");
 }
 function showCurrentMonth(){ const cm=currentMonth(); if(cm){ setMonth(cm); } else { FILTERS.from=FILTERS.to=null; render(); } }
+// Quick ranges anchor to the latest date that has data (so a preset always lands on real data).
 function applyPreset(p){ const ds=salesDates(); if(!ds.length) return; const last=ds[ds.length-1];
-  if(p==="all"){ FILTERS.from=ds[0]; FILTERS.to=last; }
-  else if(p==="7"){ FILTERS.to=last; FILTERS.from=ds[Math.max(0,ds.length-7)]; }
-  else if(p==="mtd"){ const cm=currentMonth(); FILTERS.from=cm?cm+"01":ds[0]; FILTERS.to=last; }
+  const ymdOf=d=>""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  const L=new Date(ymd(last)); const back=n=>{ const d=new Date(L); d.setDate(d.getDate()-n); return ymdOf(d); };
+  if(p==="today"){ FILTERS.from=FILTERS.to=last; }
+  else if(p==="yesterday"){ FILTERS.from=FILTERS.to=back(1); }
+  else if(p==="7"){ FILTERS.from=back(6); FILTERS.to=last; }
+  else if(p==="mtd"){ FILTERS.from=last.slice(0,6)+"01"; FILTERS.to=last; }
+  else if(p==="ytd"){ FILTERS.from=last.slice(0,4)+"0101"; FILTERS.to=last; }
+  else if(p==="all"){ FILTERS.from=ds[0]; FILTERS.to=last; }
   syncDateInputs(); markPreset(p); render(); }
 function markPreset(p){ document.querySelectorAll("#presets .chip").forEach(c=>c.classList.toggle("active",c.dataset.preset===p)); }
 
@@ -1215,24 +1239,29 @@ function initPalette(){
   $("#palBtn").addEventListener("click",e=>{ e.stopPropagation(); menu.hidden=!menu.hidden; });
   applyPalette(saved);
 }
+// Coverage chip describes the CURRENT tab: Amazon = its period; Dropship = live/real-time;
+// SOR & Overall = the date span that tab's data actually covers.
 function updateCoverageChip(){
   const chip=$("#covChip"); if(!chip) return;
+  const chName=(CHANNELS.find(x=>x.id===SEL.ch)||{}).name||"";
   if(SEL.mkt==="amazon"){ const per=STORE.amazon&&STORE.amazon.sor&&STORE.amazon.sor.period;
-    if(per){ chip.hidden=false; chip.innerHTML=`<span class="cal">🗓️</span> <b>${dlabel(per.from)} – ${dlabel(per.to)}</b>`; chip.title="Amazon period (from your ARA upload)"; }
+    if(per){ chip.hidden=false; chip.innerHTML=`<span class="cal">🗓️</span> <b>Amazon</b> · ${dlabel(per.from)} – ${dlabel(per.to)}`; chip.title="Amazon period (from your ARA upload)"; }
     else chip.hidden=true; return; }
-  const cov=coverageFor(SEL.mkt);
-  if(!cov){ chip.hidden=true; return; }
+  if(SEL.ch==="dropship"){ chip.hidden=false;
+    chip.innerHTML=`<span class="cal">🗓️</span> <b>Dropship</b> · <span class="live">live · real-time</span>`;
+    chip.title="Dropship pulls live from the ERP — always current"; return; }
+  const ds=salesDates();   // dates the active tab (channel) actually has data for
+  if(!ds.length){ chip.hidden=true; return; }
   chip.hidden=false;
-  const parts=[];
-  if(cov.past) parts.push(`<b>${cov.past}</b>`);
-  if(cov.cur) parts.push(`<b>${cov.cur}</b> <span class="live">● live</span>`);
-  chip.innerHTML=`<span class="cal">🗓️</span> ${parts.join('<span class="csep">·</span>')||"—"}`;
-  chip.title=`Data coverage — ${ctxName().m}\nCompleted months: ${cov.past||"—"}\nLive month: ${cov.cur||"—"}`;
+  const live = ds[ds.length-1].slice(0,6)===(currentMonth()||""); // latest data is in the running month
+  chip.innerHTML=`<span class="cal">🗓️</span> <b>${chName}</b> · ${dlabel(ds[0])} – ${dlabel(ds[ds.length-1])}${live?' <span class="live">● live</span>':''}`;
+  chip.title=`${ctxName().m} · ${chName}: ${dlabel(ds[0])} – ${dlabel(ds[ds.length-1])}`;
 }
 function wire(){
   $("#mktTabs").addEventListener("click",e=>{ const b=e.target.closest(".mtab"); if(b) selectMarket(b.dataset.mkt); });
   $("#chTabs").addEventListener("click",e=>{ const b=e.target.closest(".ctab"); if(b) selectChannel(b.dataset.ch); });
-  $("#viewTabs").addEventListener("click",e=>{ const b=e.target.closest(".tab"); if(!b)return; VIEW=b.dataset.view; document.querySelectorAll("#viewTabs .tab").forEach(t=>t.classList.toggle("active",t===b)); render(); });
+  $("#viewTabs").addEventListener("click",e=>{ const b=e.target.closest(".vtab"); if(!b)return; VIEW=b.dataset.view; document.querySelectorAll("#viewTabs .vtab").forEach(t=>t.classList.toggle("active",t===b)); render(); });
+  ["fFrom","fTo"].forEach(id=>{ const inp=$("#"+id); if(inp) inp.addEventListener("click",()=>{ try{ inp.showPicker&&inp.showPicker(); }catch(e){} }); });
   $("#uploadBtn").addEventListener("click",openModal);
   $("#modalClose").addEventListener("click",closeModal);
   $("#modalBg").addEventListener("click",e=>{ if(e.target===$("#modalBg")) closeModal(); });
