@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "name": "tenxyou-marketplace-sales",
+  "dependencies": {
+    "@vercel/blob": "latest"
+  }
+}

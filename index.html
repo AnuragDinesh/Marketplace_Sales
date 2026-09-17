@@ -1,0 +1,1295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ten x You · Marketplace Sales</title>
+<style>
+  :root{
+    --bg:#f4f7fc;--panel:#fff;--panel-2:#f8fafe;--ink:#0f1729;--ink-2:#455066;--muted:#5b6472;--line:#e4e8f0;--line-2:#eef3fc;
+    --accent:#1650CC;--accent-ink:#0B2E7A;--accent-soft:#eaf0fd;
+    --brand-row:#1f57d6;--headink:#fff;--foot:#eef3fc;--barfill:rgba(22,80,204,.16);
+    --pos:#1a8f4a;--neg:#dc2626;--warn:#d9741f;--amber:#c9a227;
+    --shadow:0 1px 2px rgba(11,46,122,.05),0 12px 30px rgba(11,46,122,.08);
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;--mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0a0f1c;--panel:#111a2e;--panel-2:#0e1728;--ink:#e7ecf5;--ink-2:#93a0b5;--muted:#93a0b5;--line:#20304d;--line-2:#0f1830;
+    --accent:#3f74ff;--accent-ink:#9db8ff;--accent-soft:#16213c;--brand-row:#22315a;--headink:#eaf0ff;--foot:#0f1830;--barfill:rgba(63,116,255,.22);
+    --pos:#3cc06a;--neg:#ef6b64;--warn:#e0902f;--amber:#d9bd45;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.5);}}
+  :root[data-theme="dark"]{
+    --bg:#0a0f1c;--panel:#111a2e;--panel-2:#0e1728;--ink:#e7ecf5;--ink-2:#93a0b5;--muted:#93a0b5;--line:#20304d;--line-2:#0f1830;
+    --accent:#3f74ff;--accent-ink:#9db8ff;--accent-soft:#16213c;--brand-row:#22315a;--headink:#eaf0ff;--foot:#0f1830;--barfill:rgba(63,116,255,.22);
+    --pos:#3cc06a;--neg:#ef6b64;--warn:#e0902f;--amber:#d9bd45;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.5);}
+  /* chart palette — categorical, legible in light & dark */
+  :root{--c-units:#3b5bdb;--c-gmv:#e8590c;--cat1:#3b5bdb;--cat2:#e8590c;--cat3:#2f9e44;--cat4:#9c36b5;--cat5:#1098ad;--cat6:#e03131;--cat7:#f59f00;--cat8:#868e96}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--c-units:#5c7cfa;--c-gmv:#ff922b;--cat1:#5c7cfa;--cat2:#ff922b;--cat3:#51cf66;--cat4:#cc5de8;--cat5:#22b8cf;--cat6:#ff6b6b;--cat7:#ffd43b;--cat8:#adb5bd}}
+  :root[data-theme="dark"]{--c-units:#5c7cfa;--c-gmv:#ff922b;--cat1:#5c7cfa;--cat2:#ff922b;--cat3:#51cf66;--cat4:#cc5de8;--cat5:#22b8cf;--cat6:#ff6b6b;--cat7:#ffd43b;--cat8:#adb5bd}
+  /* neutral table header (no heavy colour bar) */
+  :root{--th-bg:#eef1f7;--th-ink:#3c465a}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--th-bg:#16223c;--th-ink:#9fb0cc}}
+  :root[data-theme="dark"]{--th-bg:#16223c;--th-ink:#9fb0cc}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1320px;margin:0 auto;padding:20px 20px 80px}
+  .tnum{font-variant-numeric:tabular-nums}
+  button{font-family:inherit;cursor:pointer}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .brand h1{font-size:17px;margin:0;font-weight:750;letter-spacing:-.3px}
+  .brand p{margin:0;font-size:12.5px;color:var(--muted)}
+  .pill{display:inline-flex;align-items:center;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink)}
+  .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 13px;border-radius:9px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:var(--accent-ink)}
+  .btn.ghost{background:transparent}
+  .synced{font-size:12px;color:var(--muted)}
+  /* compact coverage chip (top corner) */
+  .covchip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:default;white-space:nowrap}
+  .covchip b{color:var(--ink);font-weight:700}
+  .covchip .live{color:var(--pos);font-weight:700}
+  .covchip .cal{opacity:.7}
+  .covchip .csep{margin:0 6px;color:var(--line);font-weight:700}
+  /* palette picker */
+  .palwrap{position:relative}
+  .paldot{gap:6px}
+  .swpv{width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 0 1px var(--line)}
+  .palmenu{min-width:172px;padding:6px}
+  .palmenu .palopt{display:flex;align-items:center;gap:9px;font-size:13px;padding:7px 8px;border-radius:7px;cursor:pointer}
+  .palmenu .palopt:hover{background:var(--panel-2)}
+  .palmenu .palopt.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:650}
+  .palmenu .sw{width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+
+  /* marketplace tabs — compact flat underline tabs */
+  .mkttabs{display:flex;gap:2px;border-bottom:2px solid var(--line);margin:2px 0 10px;flex-wrap:wrap}
+  .mtab{border:0;background:none;color:var(--muted);padding:7px 14px;font-size:14px;font-weight:700;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;border-radius:0}
+  .mtab:hover{color:var(--ink)}
+  .mtab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .mtab.dim{color:var(--muted);opacity:.55}
+  .mtab.dim.active{opacity:1}
+  .mtab .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);margin-left:6px;vertical-align:middle}
+  .mtab.dim .dot{display:none}
+  /* channel + view — pill chips */
+  .chtabs{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
+  .ctab{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 15px;border-radius:22px;font-size:12.5px;font-weight:650;white-space:nowrap;cursor:pointer}
+  .ctab:hover{border-color:var(--accent)}
+  .ctab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .ctab.dim{color:var(--muted);opacity:.7}
+  .tabs{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+  .tab{border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 15px;border-radius:22px;font-size:12.5px;font-weight:650;white-space:nowrap;cursor:pointer}
+  .tab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+
+  /* filter bar */
+  .filters{display:flex;gap:9px 12px;align-items:flex-end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-bottom:13px;box-shadow:var(--shadow)}
+  .fgroup{display:flex;flex-direction:column;gap:4px}
+  .fgroup label{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+  select,input[type=date],input[type=search],input[type=password]{font-family:inherit;font-size:13px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+  .presets{display:flex;gap:5px}
+  .chip{border:1px solid var(--line);background:var(--panel-2);color:var(--ink-2);border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600}
+  .chip.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+  .spacer{flex:1}
+  /* align all filter controls to one row height */
+  .filters .fgroup{justify-content:flex-end}
+  .filters select,.filters input[type=date],.filters input[type=search],.filters .chip,.filters .ms-btn,.filters .presets{height:34px}
+  .filters .chip,.filters .ms-btn{display:inline-flex;align-items:center}
+  .filters .presets{display:flex;gap:5px;align-items:stretch}
+
+  /* coverage banner */
+  .coverage{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .coverage .crow{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;font-size:12.5px;padding:3px 0}
+  .coverage .clab{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);min-width:110px}
+  .coverage .cm{color:var(--ink-2)}
+  .coverage .cm b{color:var(--ink)}
+  .coverage .live{color:var(--pos);font-weight:700}
+  .coverage .chead{font-weight:750;font-size:13px;color:var(--ink);margin-bottom:8px}
+  .coverage .csub{font-weight:400;color:var(--muted);font-size:12px}
+
+  /* kpi cards — compact inline stats */
+  .kpis{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:11px;padding:9px 16px 10px;box-shadow:var(--shadow);min-width:132px}
+  .kpi .k{font-size:10px;font-weight:750;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+  .kpi .v{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.4px;margin-top:2px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1.15}
+  .kpi .s{font-size:10.5px;color:var(--muted);margin-top:1px}
+  .kpi.grand{border-left-color:var(--accent)}
+  .kpi.grand .v{color:var(--accent)}
+  .capnote{font-size:11.5px;color:var(--muted);margin:7px 2px 14px}
+  .samplewarn{background:#fff4e5;border:1px solid #ffb547;color:#7a4b00;border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:13px;line-height:1.5}
+
+  /* panels */
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:2fr 1fr}
+  @media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:visible;margin-bottom:16px}
+  .panel .ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
+  .panel .ph h3{margin:0;font-size:13px;font-weight:700;letter-spacing:-.1px}
+  .panel .ph .sub{font-size:11px;color:var(--muted);font-weight:500}
+  .phL{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-width:0;flex:1 1 auto}
+  .ptools{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  .panel .ph .mini{margin-left:4px}
+  .ptools input[type=search]{height:30px;min-width:130px;border-radius:8px}
+  .ptools .btn.ghost{padding:6px 11px;font-size:12.5px}
+  .panel .pb{padding:13px 15px}
+
+  /* tables */
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line-2);border-right:1px solid var(--line-2);white-space:nowrap}
+  th:last-child,td:last-child{border-right:0}
+  td.tnum,th.tnum{text-align:center}
+  thead th{position:sticky;top:0;background:var(--th-bg);color:var(--th-ink);font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;z-index:1;cursor:pointer;user-select:none;border-bottom:1.5px solid var(--line);border-right:1px solid var(--line-2)}
+  thead th:hover:not(.noSort){color:var(--accent)}
+  thead th.noSort{cursor:default}
+  tbody tr:nth-child(even){background:var(--panel-2)}
+  tbody tr:hover{background:var(--accent-soft)}
+  td.tnum,.tnum{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .tscroll{max-height:560px;overflow:auto;border-radius:0 0 13px 13px}
+  .muted{color:var(--muted)}
+  .mono{font-family:var(--mono);font-size:12px}
+  .cat{display:inline-block;padding:2px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent-ink);font-size:11px;font-weight:700}
+
+  /* column picker */
+  .colpick{position:relative}
+  .colmenu{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:8px;z-index:5;min-width:150px}
+  .colmenu label{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 6px;border-radius:6px;cursor:pointer}
+  .colmenu label:hover{background:var(--panel-2)}
+  /* draggable column resize */
+  .rz{position:absolute;top:0;right:-4px;width:10px;height:100%;cursor:col-resize;z-index:4}
+  .rz::before{content:"";position:absolute;right:4px;top:6px;bottom:6px;width:2px;background:var(--line);border-radius:2px}
+  .rz:hover::before{background:var(--accent);width:3px;top:0;bottom:0}
+  /* multi-select dropdown */
+  .ms{position:relative;display:inline-block}
+  .ms-btn{font:inherit;font-size:13px;font-weight:600;padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--ink);cursor:pointer;white-space:nowrap}
+  .ms-btn:hover{border-color:var(--accent)}
+  .ms-cnt{color:var(--accent);font-weight:750}
+  .ms-arw{opacity:.55;font-size:10px;margin-left:2px}
+  .ms-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:40;width:260px;background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);padding:9px}
+  .ms-search{width:100%;font:inherit;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);color:var(--ink);margin-bottom:7px}
+  .ms-list{max-height:260px;overflow:auto}
+  .ms-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:7px;font-size:13px;cursor:pointer}
+  .ms-item:hover{background:var(--panel-2)}
+  .ms-item input{accent-color:var(--accent);width:15px;height:15px}
+  .ms-empty{padding:12px;color:var(--muted);font-size:12.5px;text-align:center}
+  .reset2{font:inherit;font-size:12px;font-weight:650;color:var(--muted);background:none;border:0;cursor:pointer;text-decoration:underline;padding:6px 4px;margin-top:4px}
+  .reset2:hover{color:var(--accent)}
+
+  /* bar rows */
+  .barrow{display:grid;grid-template-columns:120px 1fr 92px;align-items:center;gap:10px;padding:5px 0}
+  .barrow .bl{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bartrack{height:10px;background:var(--line-2);border-radius:6px;overflow:hidden}
+  .barfill{height:100%;border-radius:6px;background:var(--accent)}
+  .barrow .bv{font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .bstack{display:flex;flex-direction:column;gap:3px}
+
+  /* daily columns chart */
+  .cols{display:flex;align-items:stretch;gap:3px;height:170px;padding:20px 2px 0}
+  .col{flex:1;min-width:5px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+  .col .bar{position:relative;width:100%;background:var(--c-units);border-radius:3px 3px 0 0;min-height:2px}
+  .col .bar.b-g{background:var(--c-gmv)}
+  .col .bar.b-u{background:var(--c-units)}
+  .col .cl{font-size:9px;color:var(--muted);transform:rotate(-90deg);transform-origin:center;white-space:nowrap;height:26px;margin-top:2px}
+  .bcap{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
+  .pair{display:flex;gap:3px;align-items:flex-end;height:100%;width:100%;justify-content:center}
+  .pair .bar{width:44%}
+  /* segmented toggle */
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel-2)}
+  .segb{border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:11.5px;font-weight:650;padding:6px 11px;cursor:pointer;border-left:1px solid var(--line)}
+  .segb:first-child{border-left:0}
+  .segb.on{background:var(--accent);color:#fff}
+  /* minimize button + total row */
+  .mini{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:7px;min-width:26px;height:26px;line-height:1;cursor:pointer;font-size:15px;font-weight:700;padding:0 7px}
+  .mini:hover{border-color:var(--accent);color:var(--accent)}
+  .totrow td{border-top:2px solid var(--accent);background:var(--panel-2);font-weight:700}
+  .chartlegend{display:flex;gap:14px;justify-content:center;font-size:11px;color:var(--ink-2);margin-top:8px}
+  .chartlegend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}
+
+  /* empty / toast / modal */
+  .empty{background:var(--panel);border:1px dashed var(--line);border-radius:13px;padding:52px 20px;text-align:center;color:var(--muted)}
+  .empty h2{color:var(--ink);font-size:18px;margin:0 0 6px}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,20,18,.55);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow:auto}
+  .modal-bg.on{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:15px;max-width:620px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal .mh{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line-2)}
+  .modal .mh h3{margin:0;font-size:15px}
+  .modal .mb{padding:18px}
+  .uploadzones{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){.uploadzones{grid-template-columns:1fr}}
+  .uz{display:block;border:2px dashed var(--line);border-radius:11px;padding:13px 14px;background:var(--panel-2);cursor:pointer;transition:.15s}
+  .uz:hover{border-color:var(--accent)}
+  .uz.hot{border-color:var(--accent);background:var(--accent-soft)}
+  .uzt{font-weight:700;font-size:13px}
+  .uzh{font-size:11px;color:var(--muted);margin-top:3px}
+  .split-note{font-size:11.5px;color:var(--muted);background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;padding:9px 11px;margin-top:12px}
+  .ingest-log{margin-top:14px;font-size:12.5px}
+  .ingest-log .row{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line-2)}
+  .ok{color:var(--pos);font-weight:700}.bad{color:var(--neg);font-weight:700}.skip{color:var(--muted);font-weight:700}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:80}
+  .toast.on{opacity:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  /* viewing gate */
+  #gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+  #gate .gbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:30px 28px;max-width:360px;width:100%;text-align:center}
+  #gate .glogo{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+  #gate h2{margin:0 0 4px;font-size:19px;font-weight:750;color:var(--ink)}
+  #gate p{margin:0 0 18px;color:var(--muted);font-size:13px}
+  #gate input{width:100%;font-size:14px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);color:var(--ink)}
+  #gate button{width:100%;margin-top:10px;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+  #gate button:hover{filter:brightness(1.05)}
+  #gate .gerr{color:var(--neg);font-size:12.5px;min-height:17px;margin-top:9px}
+  [hidden]{display:none!important}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<div id="gate" hidden>
+  <form class="gbox" id="gateForm">
+    <div class="glogo">Ten × You</div>
+    <h2>Marketplace Sales</h2>
+    <p>Enter the dashboard password to continue.</p>
+    <input type="password" id="gatePw" autocomplete="current-password" placeholder="Password">
+    <button type="submit">Unlock</button>
+    <div class="gerr" id="gateErr"></div>
+  </form>
+</div>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Marketplace Sales</h1>
+      <p id="brandSub">Myntra · SOR</p>
+      <span class="pill" id="pill">Myntra · SOR</span>
+    </div>
+    <div class="top-actions">
+      <span class="covchip" id="covChip" hidden></span>
+      <span class="synced" id="synced">—</span>
+      <div class="palwrap">
+        <button class="btn ghost paldot" id="palBtn" title="Colour theme"><span class="swpv" id="palSwatch"></span> Theme ▾</button>
+        <div class="colmenu palmenu" id="palMenu" hidden></div>
+      </div>
+      <button class="btn ghost" id="themeBtn" title="Light / dark">◑</button>
+      <button class="btn primary" id="uploadBtn">⬆ Upload data</button>
+    </div>
+  </div>
+
+  <div class="mkttabs" id="mktTabs"></div>
+  <div class="chtabs" id="chTabs"></div>
+  <div class="tabs" id="viewTabs">
+    <button class="tab active" data-view="overview">Overview</button>
+    <button class="tab" data-view="products">Products</button>
+  </div>
+
+  <div class="filters" id="filters">
+    <div class="fgroup datef"><label>Month</label><select id="fMonth"></select></div>
+    <div class="fgroup datef"><label>From</label><input type="date" id="fFrom"></div>
+    <div class="fgroup datef"><label>To</label><input type="date" id="fTo"></div>
+    <div class="fgroup datef"><label>Quick</label>
+      <div class="presets" id="presets">
+        <button class="chip" data-preset="mtd">MTD</button>
+        <button class="chip" data-preset="7">Last 7 days</button>
+        <button class="chip" data-preset="all">All time</button>
+      </div>
+    </div>
+    <div class="fgroup"><label>Category</label><div class="presets" id="catToggle"></div></div>
+    <div class="fgroup"><label>Products</label><span id="msProd"></span></div>
+    <div class="fgroup"><label>Colours</label><span id="msColour"></span></div>
+    <div class="spacer"></div>
+    <div class="fgroup"><label>&nbsp;</label><button class="btn ghost" id="resetBtn">Reset</button></div>
+  </div>
+
+  <div id="app"></div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="mh">
+      <h3 id="modalTitle">Upload Myntra data</h3>
+      <button class="btn ghost" id="modalClose">✕</button>
+    </div>
+    <div class="mb">
+      <div class="uploadzones">
+        <label class="uz drop"><div class="uzt">📅 Past data</div><div class="uzh">Finalized past-month sales files. Merged by date; each completed month is held.</div><input type="file" class="uzin" accept=".csv,.xlsx,.xls" multiple hidden></label>
+        <label class="uz drop"><div class="uzt">🟢 Current-month sale data</div><div class="uzh">The live month — upload daily/whenever to accumulate.</div><input type="file" class="uzin" accept=".csv,.xlsx,.xls" multiple hidden></label>
+        <label class="uz drop" id="zonePrice"><div class="uzt">💰 Selling price (SP) / mapping sheet</div><div class="uzh">The shared mapping (SKU/style/GTIN/ASIN/Flipkart FSN → selling price). Powers value for Myntra & Flipkart SOR. Sales value = units × SP.</div><input type="file" class="uzin" accept=".csv,.xlsx,.xls" multiple hidden></label>
+      </div>
+      <div class="split-note">
+        <b>CSV or Excel (.xlsx)</b> accepted. Files are <b>auto-detected</b> and routed to the right marketplace, channel and month. Sales merge <b>by date</b> — updating the current month never touches past months or the SP sheet. Uploaded sheets stay until you replace them. Nothing is shared with the team until you publish below.
+      </div>
+      <div class="ingest-log" id="ingestLog"></div>
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-top:16px;flex-wrap:wrap">
+        <div class="fgroup" id="pwWrap" style="flex:1;min-width:180px">
+          <label>Update password (to publish for the team)</label>
+          <input type="password" id="pw" placeholder="team update password">
+        </div>
+        <button class="btn primary" id="publishBtn">Save data</button>
+      </div>
+      <div class="hint">Uploads are saved in this browser automatically. Click Save to keep them. (Team publishing turns on when we deploy.)</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================================
+   Ten x You — Marketplace Sales
+   Marketplace -> Channel -> View. Sales-only (inventory managed elsewhere).
+   Values are MRP-based until a price sheet is uploaded; tax is GST-est.
+   ============================================================================ */
+
+const PW_HASH = -1982839713; // 'areyousure?'
+const REQUIRE_PW = true; // team publishing requires the shared update password
+function strHash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h; }
+
+/* ---- navigation model ---------------------------------------------------- */
+const MARKETPLACES=[{id:"myntra",name:"Myntra"},{id:"flipkart",name:"Flipkart"},{id:"amazon",name:"Amazon"}];
+const CHANNELS=[{id:"overall",name:"Overall"},{id:"sor",name:"SOR"},{id:"dropship",name:"Dropship"}];
+const CONCRETE_MKTS=["myntra","flipkart","amazon"];
+const CONCRETE_CHS=["sor","dropship"];
+
+/* ---- data store: STORE[mkt][ch] = { sales:[{d,style,sku,art,cat,qty,mrp}], prices, updated_at } ---- */
+let STORE={};
+function bucket(mkt,ch){ (STORE[mkt]=STORE[mkt]||{}); return (STORE[mkt][ch]=STORE[mkt][ch]||{sales:[],prices:null,updated_at:null}); }
+function channelHasData(m,c){ const b=STORE[m]&&STORE[m][c]; return !!(b&&((b.sales&&b.sales.length)||(b.rows&&b.rows.length))); }
+function marketplaceHasData(m){ return CONCRETE_CHS.some(c=>channelHasData(m,c)); }
+
+let SEL={ mkt:"myntra", ch:"sor" };
+let DATA={ sales:[], prices:null, updated_at:null };   // derived active view
+let FILTERS={ from:null, to:null, cat:"all", products:new Set(), colours:new Set() };
+let VIEW="overview";
+let PROD_SORT={ key:"units", dir:-1 };
+let PROD_COLS={};       // filled from PCOLS defaults
+let PROD_PICK="all";    // (legacy, unused)
+let DAILY_METRIC="units";   // units | gmv | both
+let SPLIT_METRIC="units";   // units | gmv
+let BYMONTH_VIEW="table";   // table | chart
+let BYMONTH_METRIC="units"; // units | gmv
+let PROD_GRAIN="prodcolour"; // product | prodcolour — grain toggle for all product tables + Amazon contribution chart
+let COLLAPSED=new Set();    // minimized widget keys
+
+function expandMkts(){ return SEL.mkt==="overall"?CONCRETE_MKTS:[SEL.mkt]; }
+function expandChs(){ return SEL.ch==="overall"?CONCRETE_CHS:[SEL.ch]; }
+function syncActive(){
+  const mkts=expandMkts(), chs=expandChs();
+  let sales=[], upd=null;
+  for(const m of mkts) for(const c of chs){ const b=STORE[m]&&STORE[m][c]; if(!b) continue;
+    sales=sales.concat(b.sales); if(b.updated_at&&(!upd||b.updated_at>upd)) upd=b.updated_at; }
+  let prices=null;
+  if(mkts.length===1&&chs.length===1){ const b=STORE[mkts[0]]&&STORE[mkts[0]][chs[0]]; prices=b?b.prices:null; }
+  DATA={ sales, prices, updated_at:upd };
+}
+
+/* ---- helpers ------------------------------------------------------------- */
+const $ = s => document.querySelector(s);
+const el = (t,c,h)=>{ const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
+function num(x){ if(x==null) return 0; const n=Number(String(x).replace(/,/g,"").trim()); return isFinite(n)?n:0; }
+function ymd(s){ s=String(s); return s.length===8 ? s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8) : s; }
+function fromISO(iso){ return iso ? iso.replace(/-/g,"") : null; }
+function dlabel(y){ const d=new Date(ymd(y)); return d.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}); }
+const fmtInt = n => Math.round(n).toLocaleString("en-IN");
+function fmtINR(n){ n=Math.round(n); const s=n<0?"-":""; n=Math.abs(n); if(n>=1e7) return s+"₹"+(n/1e7).toFixed(2)+"Cr"; if(n>=1e5) return s+"₹"+(n/1e5).toFixed(2)+"L"; return s+"₹"+n.toLocaleString("en-IN"); }
+const fmtINRfull = n => "₹"+Math.round(n).toLocaleString("en-IN");
+function pct(n,d){ return d? (100*n/d) : 0; }
+// Days in the calculation window for DRR. Amazon = its period span; Myntra = the span of
+// dates that actually have data inside the selected from/to (so the live month isn't divided
+// by a full 30 days).
+function spanDays(f,t){ return Math.max(1, Math.round((new Date(ymd(t))-new Date(ymd(f)))/864e5)+1); }
+function windowDays(){
+  if(SEL.mkt==="amazon"){ const p=STORE.amazon&&STORE.amazon.sor&&STORE.amazon.sor.period; return p?spanDays(p.from,p.to):1; }
+  const ds=salesDates().filter(inRange); if(!ds.length) return 1;
+  return spanDays(ds[0], ds[ds.length-1]);
+}
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("on"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("on"),2600); }
+// draggable column widths
+function makeResizable(table){
+  if(!table||table.dataset.rz) return; table.dataset.rz="1";
+  table.querySelectorAll("thead th").forEach(th=>{
+    const h=document.createElement("div"); h.className="rz";
+    h.addEventListener("click",e=>e.stopPropagation());
+    h.addEventListener("mousedown",e=>{ e.preventDefault(); e.stopPropagation();
+      const sx=e.pageX, sw=th.offsetWidth;
+      const mv=ev=>{ const w=Math.max(46,sw+ev.pageX-sx)+"px"; th.style.width=w; th.style.minWidth=w; th.style.maxWidth=w; };
+      const up=()=>{ document.removeEventListener("mousemove",mv); document.removeEventListener("mouseup",up); document.body.style.userSelect=""; };
+      document.body.style.userSelect="none"; document.addEventListener("mousemove",mv); document.addEventListener("mouseup",up);
+    });
+    th.appendChild(h);
+  });
+}
+function resizeAll(){ requestAnimationFrame(()=>document.querySelectorAll("#app table").forEach(makeResizable)); }
+// export (CSV or Excel) — user picks the format
+function rangeTag(){ return (FILTERS.from||"")+"_"+(FILTERS.to||""); }
+function ctxTag(){ const m={overall:"All",myntra:"Myntra",amazon:"Amazon",flipkart:"Flipkart"}[SEL.mkt]||SEL.mkt; const c={overall:"All",sor:"SOR",dropship:"Dropship"}[SEL.ch]||SEL.ch; return SEL.mkt==="amazon"?"Amazon-SOR":`${m}-${c}`; }
+function doExport(aoa, base, fmt){
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  if(fmt==="csv"){ const csv=XLSX.utils.sheet_to_csv(ws); const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"})); a.download=base+".csv"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); }
+  else { const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Data"); XLSX.writeFile(wb, base+".xlsx"); }
+}
+function exportControl(getAOA, base){
+  const wrap=el("span","colpick");
+  wrap.innerHTML=`<button class="btn ghost">⬆ Export ▾</button><div class="colmenu" hidden><label data-x="csv">CSV (.csv)</label><label data-x="xlsx">Excel (.xlsx)</label></div>`;
+  const btn=wrap.querySelector("button"), menu=wrap.querySelector(".colmenu");
+  btn.addEventListener("click",e=>{ e.stopPropagation(); menu.hidden=!menu.hidden; });
+  menu.addEventListener("click",e=>{ const l=e.target.closest("label"); if(!l)return; e.stopPropagation(); menu.hidden=true; try{ doExport(getAOA(), base, l.dataset.x); }catch(err){ toast("Export failed: "+err.message); } });
+  return wrap;
+}
+
+/* ---- value + tax --------------------------------------------------------- */
+// Value comes ONLY from the uploaded price sheet (per user: wait for the price sheet, don't use MRP).
+// GST is slab-based on the per-unit sale value: < ₹2500 -> 5%, ₹2500+ -> 18%. Price is tax-inclusive.
+let MASTER=null; // shared product master built from the mapping sheet: {map:id->SP, attr:id->{gtin,name,colour,size,style,mrp}}
+// Value is shown when: SP sheet loaded (SOR), Amazon (revenue from file), or Dropship (amount from ERP).
+const hasValue = () => channelHasOwnValue() || !!(MASTER&&MASTER.map);
+const channelHasOwnValue = () => SEL.ch==="dropship" || SEL.ch==="overall" || SEL.mkt==="flipkart"; // dropship + Flipkart rows carry their own amount (from ERP / the Flipkart file)
+const valueShown = () => SEL.mkt==="amazon" || hasValue();
+function normId(v){ v=String(v==null?"":v).trim(); return /^\d+\.0+$/.test(v)?v.replace(/\.0+$/,""):v; } // "38983867.0" -> "38983867"
+// Dropship rows carry an ERP amount (amt) → per-unit price is amt/qty; SOR rows price from the SP master.
+function priceFor(r){ if(r.amt!=null&&r.qty>0){ const up=r.amt/r.qty; return up>0?up:null; }
+  if(!MASTER||!MASTER.map) return null; const m=MASTER.map; const hit = m[normId(r.sku)] ?? m[normId(r.style)]; return (hit!=null&&hit>0)?hit:null; }
+function gstRate(unitVal){ return unitVal<2500 ? 0.05 : 0.18; }
+function valueAgg(rows){ let units=0,priced=0,gross=0,tax=0;
+  for(const r of rows){ units+=r.qty; const v=priceFor(r); if(v==null) continue; const g=r.qty*v; const rt=gstRate(v); gross+=g; tax+=g*rt/(1+rt); priced+=r.qty; }
+  return { units, priced, gross, tax, ex:gross-tax, coverage: units?pct(priced,units):0 }; }
+
+/* ---- CSV parser ---------------------------------------------------------- */
+function csvRows(text){
+  const rows=[]; let i=0, f="", row=[], q=false;
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  while(i<text.length){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){ f+='"'; i++; } else q=false; } else f+=c; }
+    else { if(c==='"') q=true; else if(c===","){ row.push(f); f=""; }
+           else if(c==="\n"){ row.push(f); rows.push(row); row=[]; f=""; }
+           else if(c==="\r"){} else f+=c; } i++; }
+  if(f.length||row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+function parseCSV(text){
+  const rows=csvRows(text);
+  if(!rows.length) return {header:[], objs:[]};
+  const header=rows[0].map(h=>h.trim()); const objs=[];
+  for(let r=1;r<rows.length;r++){ if(rows[r].length===1&&rows[r][0]==="") continue; const o={}; header.forEach((h,ci)=>o[h]=rows[r][ci]); objs.push(o); }
+  return {header, objs};
+}
+
+/* ---- detection + normalization ------------------------------------------ */
+function detectType(header){
+  const H=header.map(h=>h.toLowerCase());
+  if(H.includes("ord_month") && H.includes("sku_code") && H.includes("qty")) return "sales";
+  if(H.includes("approve_date") && H.includes("product_id") && H.some(h=>h.includes("sum of unit"))) return "flipkart"; // Flipkart Sales sheet
+  if(H.includes("inv_fsn") && H.includes("qoh")) return "fkqoh";   // Flipkart QOH (stock) — ignored for now
+  if(H.includes("inward_age_bucket") && H.some(h=>h.startsWith("inv_units"))) return "inventory";
+  if(H.includes("mdirect") || H.includes("order_release_id")) return "mdirect";
+  if(priceCols(header)) return "prices";
+  return null;
+}
+// Flipkart Sales sheet -> sales rows. Value is looked up via SP (mapping's Flipkart FSN column),
+// same as Myntra SOR. product_id = FSN (per size, join key); item_id = the style/model (per colour).
+function catFromFK(sc,vert){ const s=((sc||"")+" "+(vert||"")).toLowerCase();
+  if(/footwear|shoe|slide|slipper|flip|sandal|clog|sneaker|boot/.test(s)) return "Footwear";
+  if(/apparel|tshirt|t-shirt|tee|shirt|short|top|sock|clothing|polo|track|legging|jogger|vest|hoodie/.test(s)) return "Apparel";
+  return "—"; }
+function prettyVert(v){ v=String(v||"").trim(); if(!v||v==="null") return "—"; return v.replace(/^Sp/,"").replace(/([a-z])([A-Z])/g,"$1 $2").trim()||"—"; }
+function normFlipkart(objs){
+  return objs.map(o=>{ const uk=Object.keys(o).find(k=>/sum of unit/i.test(k)); const rk=Object.keys(o).find(k=>/sum of revenue/i.test(k));
+    return { d:String(o.approve_date||"").trim().replace(/\.0$/,"").slice(0,8),
+      style:String(o.item_id||"").trim(),   // Flipkart model/style (shared across sizes)
+      sku:String(o.product_id||"").trim(),   // FSN — per size; the attribute join key
+      art:prettyVert(o.vertical), cat:catFromFK(o.super_category,o.vertical),
+      qty:num(uk?o[uk]:0), amt:num(rk?o[rk]:0), mrp:0 }; })   // amt = actual Sum of revenue from the file (GMV)
+    .filter(r=>r.d && r.qty>0);
+}
+// A price/mapping sheet needs a SELLING-PRICE column (never MRP) + one or more id columns to match on.
+function priceCols(header){
+  const low=header.map(h=>String(h).toLowerCase().trim());
+  const SP=["selling price","selling_price","sale price","sale_price","sp","net selling price","asp","nsv","final price","final_price"];
+  let vi=low.findIndex(h=>SP.includes(h));
+  if(vi<0) vi=low.findIndex(h=>/selling|realis|realiz/.test(h));
+  if(vi<0) vi=low.findIndex(h=>/(price|value|amount|rate)/.test(h) && !/mrp/.test(h)); // last resort, exclude MRP
+  if(vi<0) return null;
+  const idIdx=[]; low.forEach((h,i)=>{ if(i===vi) return; if(/style|sku|gtin|\bean\b|asin|fsn|flipkart|ajio|item[ _]?id|article/.test(h)) idIdx.push(i); });
+  if(!idIdx.length) return null;
+  const findCol=re=>{ const i=low.findIndex(h=>re.test(h)); return i>=0?header[i]:null; };
+  const attr={ gtin:findCol(/gtin|\bean\b/), name:findCol(/product name|style name|^name$|item name/), colour:findCol(/colour|color/), size:findCol(/^size$|\bsize\b/), mrp:findCol(/^mrp$/), style:findCol(/myntra style_id|^style_id$|^style$/) };
+  return { valCol:header[vi], idCols:idIdx.map(i=>header[i]), attr };
+}
+function normSales(objs){
+  return objs.map(o=>({
+    d:String(o.ord_month||"").trim(),
+    style:String(o.style_id||"").trim(),
+    sku:String(o.sku_code||"").trim(),
+    art:o.article_type||"—",
+    cat:o.master_category||"—",
+    qty:num(o.qty),
+    mrp:num(o.item_mrp),
+  })).filter(r=>r.d && r.qty>0);
+}
+function normPrices(objs, pc){
+  const map={}, attr={}; let n=0; const A=pc.attr||{};
+  for(const o of objs){ const sp=num(o[pc.valCol]);
+    const ra={ gtin:A.gtin?String(o[A.gtin]||"").trim():"", name:A.name?String(o[A.name]||"").trim():"", colour:A.colour?String(o[A.colour]||"").trim():"", size:A.size?String(o[A.size]||"").trim():"", mrp:A.mrp?num(o[A.mrp]):0, style:A.style?normId(o[A.style]):"" };
+    let added=false;
+    for(const idc of pc.idCols){ const k=normId(o[idc]); if(k && k!=="0"){ if(sp>0) map[k]=sp; attr[k]=ra; added=true; } }
+    if(added && sp>0) n++; }
+  return { valCol:pc.valCol, idCols:pc.idCols, map, attr, n, updated:new Date().toISOString() };
+}
+
+/* ---- Amazon Vendor/Retail (ARA) parser — period aggregate, has a metadata preamble ---- */
+function detectAmazon(text){ const head=text.slice(0,400); return /Programme=\[/.test(head) || /(^|\n)"?ASIN"?,[^\n]*Ordered Revenue/i.test(text.slice(0,2000)); }
+function ingestAmazon(name, text){
+  const rows=csvRows(text);
+  const hi=rows.findIndex(r=>String(r[0]).trim().toUpperCase()==="ASIN");
+  if(hi<0) return {name, type:null, msg:"Amazon file: header row (ASIN…) not found"};
+  const H=rows[hi].map(h=>String(h).trim()); const idx={}; H.forEach((h,i)=>idx[h]=i);
+  const col=(r,k)=>{ const i=idx[k]; return i==null?"":r[i]; };
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){ const r=rows[i]; const asin=String(r[idx["ASIN"]]||"").trim(); if(!asin) continue;
+    out.push({ asin, ean:normId(String(col(r,"EAN")).trim()), title:String(col(r,"Product Title")||"").trim(), units:num(col(r,"Ordered Units")), rev:num(col(r,"Ordered Revenue")) }); }
+  // period: from the "Viewing Range=[dd/mm/yy - dd/mm/yy]" metadata, else the filename
+  let period=null;
+  const mr=text.match(/Viewing Range=\[(\d{2})\/(\d{2})\/(\d{2})\s*-\s*(\d{2})\/(\d{2})\/(\d{2})\]/);
+  if(mr){ period={from:"20"+mr[3]+mr[2]+mr[1], to:"20"+mr[6]+mr[5]+mr[4]}; }
+  else { const fn=name.match(/(\d{1,2})-(\d{1,2})-(\d{4})_(\d{1,2})-(\d{1,2})-(\d{4})/); const pad=x=>String(x).padStart(2,"0");
+    if(fn) period={from:fn[3]+pad(fn[2])+pad(fn[1]), to:fn[6]+pad(fn[5])+pad(fn[4])}; }
+  const b=bucket("amazon","sor"); b.kind="period"; b.rows=out; b.period=period;
+  return {name, type:"amazon", mkt:"amazon", ch:"sor", msg:`Amazon Retail (1P) · ${out.length} ASINs${period?" · "+ymd(period.from)+" – "+ymd(period.to):""}`};
+}
+/* ---- ingest -------------------------------------------------------------- */
+function ingestText(name, text){
+  if(detectAmazon(text)) return ingestAmazon(name, text);
+  const {header, objs}=parseCSV(text);
+  const type=detectType(header);
+  if(!type) return {name, type:null, msg:"unrecognised — expected a Myntra sales, Amazon ARA, or price/value sheet"};
+  if(type==="inventory") return {name, type:"inventory", skip:true, msg:"inventory ignored — stock is managed in your stockroom, not here"};
+  if(type==="fkqoh") return {name, type:"fkqoh", skip:true, msg:"Flipkart QOH (stock) sheet ignored — this dashboard is sales-only"};
+  if(type==="mdirect") return {name, type:"mdirect", skip:true, mkt:"myntra", ch:"dropship", msg:"Myntra Dropship pulls live from the ERP now — no file upload needed; not loaded"};
+  if(type==="flipkart"){
+    const rows=normFlipkart(objs); const dates=new Set(rows.map(r=>r.d));
+    const b=bucket("flipkart","sor");
+    b.sales=b.sales.filter(r=>!dates.has(r.d)).concat(rows);
+    const ds=[...dates].sort();
+    return {name, type:"flipkart", mkt:"flipkart", ch:"sor", msg:`Flipkart SOR · ${rows.length} rows · ${ds.length} day(s) ${ds.length?ymd(ds[0]):""}${ds.length>1?" → "+ymd(ds[ds.length-1]):""}`};
+  }
+  const mkt="myntra", ch="sor", b=bucket(mkt,ch);
+  if(type==="prices"){
+    const pc=priceCols(header); MASTER=normPrices(objs,pc); b.prices=MASTER;
+    return {name, type, msg:`product master / SP sheet · ${MASTER.n} rows priced · SP=<b>${pc.valCol}</b> · matched on ${pc.idCols.length} id column(s)`};
+  }
+  if(type==="sales"){
+    const rows=normSales(objs); const dates=new Set(rows.map(r=>r.d));
+    b.sales=b.sales.filter(r=>!dates.has(r.d)).concat(rows);
+    const ds=[...dates].sort();
+    return {name, type, mkt, ch, msg:`sales · ${rows.length} rows · ${ds.length} day(s) ${ymd(ds[0])}${ds.length>1?" → "+ymd(ds[ds.length-1]):""}`};
+  }
+}
+
+/* ---- filtering ----------------------------------------------------------- */
+function salesDates(){ return [...new Set(DATA.sales.map(r=>r.d))].sort(); }
+function inRange(d){ return (!FILTERS.from||d>=FILTERS.from) && (!FILTERS.to||d<=FILTERS.to); }
+function passCat(r){ return FILTERS.cat==="all" || r.cat===FILTERS.cat; }
+function attrOf(r){ if(!MASTER||!MASTER.attr) return {}; return MASTER.attr[normId(r.sku)]||MASTER.attr[normId(r.style)]||{}; }
+function attrByIds(...ids){ if(!MASTER||!MASTER.attr) return {}; for(const id of ids){ const a=MASTER.attr[normId(id)]; if(a) return a; } return {}; }
+function nameOf(r){ const a=attrOf(r); return a.name||r.sku||r.style; }
+function passProd(r){
+  if(FILTERS.products.size && !FILTERS.products.has(nameOf(r))) return false;
+  if(FILTERS.colours.size){ if(!FILTERS.colours.has(attrOf(r).colour||"")) return false; }
+  return true;
+}
+function salesRange(){ return DATA.sales.filter(r=>inRange(r.d)&&passCat(r)&&passProd(r)); }
+function sumBy(rows, keyFn, valFn){ const m=new Map(); for(const r of rows){ const k=keyFn(r); m.set(k,(m.get(k)||0)+valFn(r)); } return [...m.entries()].sort((a,b)=>b[1]-a[1]); }
+
+/* ---- months -------------------------------------------------------------- */
+function monthsInData(){ return [...new Set(DATA.sales.map(r=>r.d.slice(0,6)))].sort(); }
+function currentMonth(){ const m=monthsInData(); return m.length?m[m.length-1]:null; }
+function monthLabel(ym){ if(!ym) return "—"; const d=new Date(+ym.slice(0,4),+ym.slice(4,6)-1,1); return d.toLocaleDateString("en-GB",{month:"short",year:"numeric"}); }
+function monthBounds(ym){ const y=+ym.slice(0,4),mo=+ym.slice(4,6); const last=new Date(y,mo,0).getDate(); return {from:ym+"01", to:ym+String(last).padStart(2,"0")}; }
+function prevMonthYm(ym){ const y=+ym.slice(0,4),m=+ym.slice(4,6); const d=new Date(y,m-2,1); return ""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0"); }
+function selectedMonth(){ if(!FILTERS.from||!FILTERS.to) return null; const a=FILTERS.from.slice(0,6),b=FILTERS.to.slice(0,6); return a===b?a:null; }
+function setMonth(ym){ if(ym==="all"){ const ds=salesDates(); if(!ds.length)return; FILTERS.from=ds[0]; FILTERS.to=ds[ds.length-1]; } else { const b=monthBounds(ym); FILTERS.from=b.from; FILTERS.to=b.to; } syncDateInputs(); render(); }
+function syncDateInputs(){ $("#fFrom").value=FILTERS.from?ymd(FILTERS.from):""; $("#fTo").value=FILTERS.to?ymd(FILTERS.to):""; const sm=selectedMonth(); $("#fMonth").value=sm&&monthsInData().includes(sm)?sm:"all"; }
+
+/* ---- data coverage (per marketplace) ------------------------------------ */
+function mktDates(m){ const s=new Set(); for(const c of CONCRETE_CHS){ const b=STORE[m]&&STORE[m][c]; if(b) b.sales.forEach(r=>s.add(r.d)); } return [...s].sort(); }
+function coverageFor(m){ const ds=mktDates(m); if(!ds.length) return null;
+  const cm=ds[ds.length-1].slice(0,6);
+  const cur=ds.filter(d=>d.slice(0,6)===cm); const past=ds.filter(d=>d.slice(0,6)<cm);
+  const rng=a=>a.length?`${dlabel(a[0])} – ${dlabel(a[a.length-1])}`:null;
+  return { past:rng(past), cur:rng(cur), cm };
+}
+
+/* ---- rendering ----------------------------------------------------------- */
+function render(){
+  syncActive(); updateContextLabel(); updateCoverageChip();
+  const isAmazon = SEL.mkt==="amazon";
+  $("#synced").textContent = DATA.updated_at ? "Updated "+new Date(DATA.updated_at).toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}) : "Not published yet";
+  const az = STORE.amazon && STORE.amazon.sor;
+  const hasData = isAmazon ? !!(az&&az.rows&&az.rows.length) : DATA.sales.length>0;
+  $("#filters").style.display = hasData ? "" : "none";
+  document.querySelectorAll(".datef").forEach(e=>e.style.display = isAmazon?"none":"");   // only Amazon (period) has no dates
+  $("#viewTabs").style.display = isAmazon ? "none" : "";   // Amazon is product-level only (no day-level)
+  const app=$("#app"); app.innerHTML="";
+  if(!hasData){ app.appendChild(SEL.ch==="dropship" ? dropshipEmpty() : emptyState()); return; }
+  if(SEL.ch==="dropship" && STORE[SEL.mkt] && STORE[SEL.mkt].dropship && STORE[SEL.mkt].dropship.sample){
+    const w=el("div","samplewarn"); w.innerHTML=`⚠ <b>SAMPLE DATA — not from your ERP.</b> These are placeholder numbers so you can see the layout on this local preview. Real Dropship figures load live from the ERP once the site is deployed.`; app.appendChild(w);
+  }
+  if(isAmazon){ renderProducts(app); }
+  else if(VIEW==="overview") renderOverview(app); else renderProducts(app);
+  resizeAll(); decoratePanels();
+}
+function amazonBanner(){
+  const b=STORE.amazon.sor; const per=b&&b.period;
+  const p=el("div","coverage");
+  p.innerHTML=`<div class="chead">🛒 Amazon Retail (1P) <span class="csub">— period totals from your ARA upload (no day-level data)</span></div>
+    <div class="crow"><span class="clab">Period</span><span class="cm">${per?"<b>"+ymd(per.from)+" – "+ymd(per.to)+"</b>":"—"}</span></div>`;
+  return p;
+}
+let COLLAPSE_KEY_FN;
+function panelKey(p){ const h=p.querySelector(".ph h3"); if(!h) return ""; return ((h.childNodes[0]&&h.childNodes[0].textContent)||h.textContent||"").trim(); }
+function applyCollapse(p){ const key=panelKey(p); const on=COLLAPSED.has(key); [...p.children].forEach(ch=>{ if(!ch.classList.contains("ph")) ch.hidden=on; }); const b=p.querySelector(".ph .mini"); if(b) b.textContent=on?"+":"–"; }
+function decoratePanels(){
+  document.querySelectorAll("#app .panel").forEach(p=>{ const ph=p.querySelector(".ph"); if(!ph) return;
+    if(!ph.querySelector(".mini")){ const b=el("button","mini","–"); b.title="Minimize / restore";
+      b.addEventListener("click",e=>{ e.stopPropagation(); const key=panelKey(p); if(COLLAPSED.has(key))COLLAPSED.delete(key); else COLLAPSED.add(key); applyCollapse(p); });
+      ph.appendChild(b); }
+    applyCollapse(p);
+  });
+}
+function ctxName(){ return { m:(MARKETPLACES.find(x=>x.id===SEL.mkt)||{}).name, c:(CHANNELS.find(x=>x.id===SEL.ch)||{}).name }; }
+function updateContextLabel(){
+  const {m,c}=ctxName();
+  $("#brandSub").innerHTML=(SEL.mkt==="overall"?"All marketplaces":m)+" · <b>"+c+"</b>";
+  $("#pill").textContent=(SEL.mkt==="overall"?"All":m)+" · "+c;
+  $("#modalTitle").textContent="Upload "+(SEL.mkt==="overall"?"data":m+" data");
+  const pz=$("#zonePrice"); if(pz) pz.hidden=false;   // the SP / mapping sheet is always uploadable
+}
+function dropshipEmpty(){ const {m}=ctxName(); return el("div","empty",`<h2>No Dropship data yet</h2><p>${m} · Dropship pulls <b>live from the ERP</b> (masked-customer Sales Orders on the ${m} channel). It fills in automatically once the site is deployed with the ERP keys — no upload needed.</p>`); }
+function emptyState(){
+  const {m,c}=ctxName(); const isMS=SEL.mkt==="myntra"&&SEL.ch==="sor";
+  const head=SEL.mkt==="overall"?"No marketplace data yet":`No data yet for ${m} · ${c}`;
+  const body=isMS?"Upload a Myntra <b>Sales_Report</b> to begin. Files are parsed in your browser; publish when you're ready to share."
+    :`No ${SEL.mkt==="overall"?"":m+" "}data has been uploaded yet. Use <b>Upload data</b> to add it.`;
+  return el("div","empty",`<h2>${head}</h2><p>${body}</p><div style="margin-top:16px"><button class="btn primary" onclick="openModal()">⬆ Upload data</button></div>`);
+}
+
+/* ---- three-tier nav ------------------------------------------------------ */
+function dropshipActive(){ return CONCRETE_MKTS.some(m=>channelHasData(m,"dropship")); }
+function buildNav(){
+  const mt=$("#mktTabs"); mt.innerHTML="";
+  MARKETPLACES.forEach(x=>{ const has=x.id==="overall"?CONCRETE_MKTS.some(marketplaceHasData):marketplaceHasData(x.id);
+    const b=el("button","mtab"+(x.id===SEL.mkt?" active":"")+(has?"":" dim"), x.name+'<span class="dot"></span>'); b.dataset.mkt=x.id; mt.appendChild(b); });
+  // Until Dropship is live, the channel "Overall" == SOR, so hide it.
+  if(SEL.ch==="overall" && !dropshipActive()) SEL.ch="sor";
+  const chans = dropshipActive() ? CHANNELS : CHANNELS.filter(x=>x.id!=="overall");
+  const ct=$("#chTabs"); ct.innerHTML="";
+  chans.forEach(x=>{ let has;
+    if(SEL.mkt==="overall") has=x.id==="overall"?CONCRETE_MKTS.some(marketplaceHasData):CONCRETE_MKTS.some(m=>channelHasData(m,x.id));
+    else has=x.id==="overall"?marketplaceHasData(SEL.mkt):channelHasData(SEL.mkt,x.id);
+    const b=el("button","ctab"+(x.id===SEL.ch?" active":"")+(has?"":" dim"), x.name); b.dataset.ch=x.id; ct.appendChild(b); });
+}
+function ensureSelHasData(){
+  if(channelHasData(SEL.mkt,SEL.ch)) return;
+  if(SEL.ch==="overall"&&SEL.mkt!=="overall"&&marketplaceHasData(SEL.mkt)) return;
+  if(SEL.mkt==="overall") return;
+  for(const m of CONCRETE_MKTS) for(const c of CONCRETE_CHS){ if(channelHasData(m,c)){ SEL.mkt=m; SEL.ch=c; return; } }
+}
+function selectMarket(id){ SEL.mkt=id; buildNav(); afterSelChange(); }
+function selectChannel(id){ SEL.ch=id; buildNav(); afterSelChange(); }
+function afterSelChange(){ syncActive(); refreshFilterOptions(); showCurrentMonth(); }
+
+/* ---------- OVERVIEW ---------- */
+function renderOverview(app){
+  const sr=salesRange();
+  const units=sr.reduce((a,r)=>a+r.qty,0);
+  const days=salesDates().filter(inRange).length;
+  const hv=hasValue(); const va=hv?valueAgg(sr):null;
+
+  // headline tiles — value tiles only appear once value is available
+  const k=el("div","kpis");
+  k.appendChild(tile("Units sold", fmtInt(units), days?days+(days>1?" days":" day"):"", false));
+  if(hv){ k.appendChild(tile("GMV (gross)", fmtINR(va.gross), va.coverage<99.5?va.coverage.toFixed(0)+"% priced":"", true)); k.appendChild(tile("Value ex-tax", fmtINR(va.ex))); }
+  app.appendChild(k);
+  const cap=el("div","capnote");
+  const gmvSrc = (SEL.mkt==="flipkart"&&SEL.ch==="sor") ? "actual Flipkart revenue from your upload"
+    : SEL.ch==="dropship" ? "actual order value from the ERP"
+    : SEL.ch==="overall" ? "the SP sheet / marketplace revenue"
+    : "your SP sheet (units × SP)";
+  cap.innerHTML = hv
+    ? `GMV = <b>${gmvSrc}</b> · GST <b>5%</b> under ₹2,500, <b>18%</b> at ₹2,500+ (tax-inclusive)${va.coverage<99.5?` · <b>${va.coverage.toFixed(0)}%</b> of units priced`:""}.`
+    : `Showing <b>units only</b>. Upload your Myntra SOR <b>selling-price (SP) sheet</b> (Upload data → 💰) to unlock GMV, taxes and ex-tax value (GMV = units × SP).`;
+  app.appendChild(cap);
+
+  // day-by-day table at the top (point 5)
+  app.appendChild(dailyValueTable(sr, salesDates().filter(inRange), hv));
+  app.appendChild(byMonthPanel(hv));
+
+  // graphs at the very bottom (point 2)
+  app.appendChild(dailyChartPanel(sr));
+  const g=el("div","grid g2");
+  g.appendChild(splitPanel("By category", sr, r=>r.cat, r=>r.qty, r=>r.qty*(priceFor(r)||0), hv));
+  g.appendChild(splitPanel("By article type", sr, r=>r.art, r=>r.qty, r=>r.qty*(priceFor(r)||0), hv));
+  app.appendChild(g);
+}
+function tile(k,v,s,grand){ const e=el("div","kpi"+(grand?" grand":"")); e.innerHTML=`<div class="k">${k}</div><div class="v tnum">${v}</div>${s?`<div class="s">${s}</div>`:""}`; return e; }
+
+function coverageBanner(){
+  const mkts = SEL.mkt==="overall" ? CONCRETE_MKTS : [SEL.mkt];
+  const nm=m=>(MARKETPLACES.find(x=>x.id===m)||{}).name;
+  const pastLine=mkts.map(m=>{ const cov=coverageFor(m); return `<span class="cm"><b>${nm(m)}</b>: ${cov&&cov.past?cov.past:"—"}</span>`; }).join(" &nbsp;·&nbsp; ");
+  const curLine =mkts.map(m=>{ const cov=coverageFor(m); return `<span class="cm"><b>${nm(m)}</b>: ${cov&&cov.cur?cov.cur+' <span class="live">● live</span>':"—"}</span>`; }).join(" &nbsp;·&nbsp; ");
+  const p=el("div","coverage");
+  p.innerHTML=`<div class="chead">🗓️ Dates you have data for <span class="csub">— what these numbers cover</span></div>
+               <div class="crow"><span class="clab">Completed months</span><span>${pastLine}</span></div>
+               <div class="crow"><span class="clab">Live month</span><span>${curLine}</span></div>`;
+  return p;
+}
+
+let DAY_SHOW={ styles:false };   // "Styles" column off by default, toggle via the picker
+function dailyValueTable(sr, dates, hv){
+  const byDay=new Map();
+  for(const r of sr){ let o=byDay.get(r.d); if(!o){ o={u:0,st:new Set(),rows:[]}; byDay.set(r.d,o); } o.u+=r.qty; o.st.add(r.style); o.rows.push(r); }
+  const showSt=DAY_SHOW.styles;
+  const p=el("div","panel");
+  p.innerHTML=`<div class="ph">
+    <div class="phL"><h3>Sales by day</h3><span class="sub">follows the date filter</span></div>
+    <div class="ptools">
+      <div class="colpick"><button class="btn ghost" id="dayColBtn">Columns ▾</button><div class="colmenu" id="dayColMenu" hidden></div></div>
+      <span id="dayExport"></span></div></div>`;
+  const sc=el("div","tscroll");
+  const stH=showSt?`<th class="noSort tnum">Styles</th>`:``;
+  let th=`<tr><th class="noSort">Date</th><th class="noSort tnum">Units</th>${stH}`+(hv?`<th class="noSort tnum">GMV (gross)</th><th class="noSort tnum">Taxes</th><th class="noSort tnum">Ex-tax</th>`:``)+`</tr>`;
+  let tb="";
+  dates.forEach(d=>{ const o=byDay.get(d); if(!o) return; let vc=""; if(hv){ const a=valueAgg(o.rows); vc=`<td class="tnum">${fmtINRfull(a.gross)}</td><td class="tnum">${fmtINRfull(a.tax)}</td><td class="tnum">${fmtINRfull(a.ex)}</td>`; }
+    tb+=`<tr><td>${ymd(d)}</td><td class="tnum">${fmtInt(o.u)}</td>${showSt?`<td class="tnum">${fmtInt(o.st.size)}</td>`:``}${vc}</tr>`; });
+  const U=sr.reduce((a,r)=>a+r.qty,0); let tot=""; if(hv){ const a=valueAgg(sr); tot=`<td class="tnum"><b>${fmtINRfull(a.gross)}</b></td><td class="tnum"><b>${fmtINRfull(a.tax)}</b></td><td class="tnum"><b>${fmtINRfull(a.ex)}</b></td>`; }
+  tb+=`<tr style="border-top:2px solid var(--accent)"><td><b>Total</b></td><td class="tnum"><b>${fmtInt(U)}</b></td>${showSt?`<td class="tnum"><b>${fmtInt(new Set(sr.map(r=>r.style)).size)}</b></td>`:``}${tot}</tr>`;
+  sc.innerHTML=`<table><thead>${th}</thead><tbody>${tb}</tbody></table>`;
+  p.appendChild(sc); makeResizable(sc.querySelector("table"));
+  const menu=p.querySelector("#dayColMenu");
+  menu.innerHTML=`<label><input type="checkbox" ${showSt?"checked":""}> Styles</label>`;
+  menu.querySelector("input").addEventListener("change",e=>{ DAY_SHOW.styles=e.target.checked; render(); });
+  p.querySelector("#dayColBtn").addEventListener("click",e=>{ e.stopPropagation(); menu.hidden=!menu.hidden; });
+  menu.addEventListener("click",e=>e.stopPropagation());
+  p.querySelector("#dayExport").appendChild(exportControl(()=>dayAOA(sr,dates,showSt,hv), ctxTag()+"-Overview-"+rangeTag()));
+  return p;
+}
+function dayAOA(sr,dates,showSt,hv){
+  const byDay=new Map(); for(const r of sr){ let o=byDay.get(r.d); if(!o){o={u:0,st:new Set(),rows:[]};byDay.set(r.d,o);} o.u+=r.qty; o.st.add(r.style); o.rows.push(r); }
+  const head=["Date","Units"]; if(showSt)head.push("Styles"); if(hv)head.push("GMV","Taxes","Ex-tax");
+  const body=[]; dates.forEach(d=>{ const o=byDay.get(d); if(!o)return; const row=[ymd(d),o.u]; if(showSt)row.push(o.st.size); if(hv){const a=valueAgg(o.rows);row.push(Math.round(a.gross),Math.round(a.tax),Math.round(a.ex));} body.push(row); });
+  const U=sr.reduce((a,r)=>a+r.qty,0); const tot=["Total",U]; if(showSt)tot.push(new Set(sr.map(r=>r.style)).size); if(hv){const a=valueAgg(sr);tot.push(Math.round(a.gross),Math.round(a.tax),Math.round(a.ex));}
+  return [head,...body,tot];
+}
+function byMonthPanel(hv){
+  const months=monthsInData(); if(!months.length) return el("div");
+  const cm=currentMonth(), selM=selectedMonth();
+  const data=months.slice().reverse().map(ym=>{ const rs=DATA.sales.filter(r=>r.d.slice(0,6)===ym); const u=rs.reduce((a,r)=>a+r.qty,0); const days=new Set(rs.map(r=>r.d)).size; const va=hv?valueAgg(rs):{gross:0,ex:0}; return {ym,u,days,g:va.gross,ex:va.ex,live:ym===cm}; });
+  const p=el("div","panel"); const ph=el("div","ph"); ph.innerHTML=`<h3>By month</h3>`;
+  const ctrl=el("div"); ctrl.style.cssText="display:flex;gap:8px;align-items:center";
+  ctrl.appendChild(segToggle([{v:"table",t:"Table"},{v:"chart",t:"Chart"}], BYMONTH_VIEW, v=>{ BYMONTH_VIEW=v; render(); }));
+  if(hv && BYMONTH_VIEW==="chart") ctrl.appendChild(segToggle([{v:"units",t:"Units"},{v:"gmv",t:"GMV"},{v:"both",t:"Both"}], BYMONTH_METRIC, v=>{ BYMONTH_METRIC=v; render(); }));
+  ph.appendChild(ctrl); p.appendChild(ph);
+  if(BYMONTH_VIEW==="chart"){
+    const asc=data.slice().reverse(); const pb=el("div","pb"); const cols=el("div","cols");
+    if(hv && BYMONTH_METRIC==="both"){
+      const umax=Math.max(1,...asc.map(d=>d.u)), gmax=Math.max(1,...asc.map(d=>d.g));
+      asc.forEach(d=>{ const c=el("div","col"); const pair=el("div","pair");
+        const b1=oneBar(d.u,umax,fmtInt,"Units "+fmtInt(d.u),"b-u"), b2=oneBar(d.g,gmax,fmtINR,"GMV "+fmtINR(d.g),"b-g");
+        [b1,b2].forEach(b=>{ b.style.cursor="pointer"; b.addEventListener("click",()=>setMonth(d.ym)); });
+        pair.appendChild(b1); pair.appendChild(b2); c.appendChild(pair); c.appendChild(el("div","cl",monthLabel(d.ym))); cols.appendChild(c); });
+      pb.appendChild(cols); const lg=el("div","chartlegend"); lg.innerHTML=`<span><span class="sw" style="background:var(--c-units)"></span>Units</span><span><span class="sw" style="background:var(--c-gmv)"></span>GMV</span>`; pb.appendChild(lg);
+    } else {
+      const gmv=hv&&BYMONTH_METRIC==="gmv"; const valOf=d=>gmv?d.g:d.u; const fmtFn=gmv?fmtINR:fmtInt; const max=Math.max(1,...asc.map(valOf));
+      asc.forEach(d=>{ const c=el("div","col"); const bar=oneBar(valOf(d),max,fmtFn,monthLabel(d.ym)+" · "+fmtFn(valOf(d)),gmv?"b-g":"b-u"); bar.style.cursor="pointer"; bar.addEventListener("click",()=>setMonth(d.ym)); c.appendChild(bar); c.appendChild(el("div","cl",monthLabel(d.ym))); cols.appendChild(c); });
+      pb.appendChild(cols);
+    }
+    p.appendChild(pb); return p;
+  }
+  const sc=el("div","pb");
+  const body=data.map(d=>{ const tag=d.live?'<span class="pill" style="background:rgba(26,143,74,.15);color:var(--pos)">LIVE</span>':'<span class="pill" style="background:var(--line-2);color:var(--muted)">HELD</span>';
+    const vc=hv?`<td class="tnum">${fmtINR(d.g)}</td><td class="tnum">${fmtINR(d.ex)}</td>`:"";
+    return `<tr data-m="${d.ym}" style="cursor:pointer${d.ym===selM?';background:var(--panel-2)':''}"><td>${monthLabel(d.ym)} ${tag}</td><td class="tnum">${fmtInt(d.u)}</td><td class="tnum">${fmtInt(d.days)}</td>${vc}</tr>`; }).join("");
+  sc.innerHTML=`<table><thead><tr><th class="noSort">Month</th><th class="noSort tnum">Units</th><th class="noSort tnum">Days</th>${hv?'<th class="noSort tnum">GMV</th><th class="noSort tnum">Ex-tax</th>':''}</tr></thead><tbody>${body}</tbody></table>`;
+  makeResizable(sc.querySelector("table"));
+  sc.querySelectorAll("tbody tr").forEach(tr=>tr.addEventListener("click",()=>setMonth(tr.dataset.m)));
+  p.appendChild(sc); return p;
+}
+function segToggle(opts, cur, onSel){ const w=el("span","seg"); opts.forEach(o=>{ const b=el("button","segb"+(o.v===cur?" on":""),o.t); b.addEventListener("click",e=>{ e.stopPropagation(); onSel(o.v); }); w.appendChild(b); }); return w; }
+function oneBar(v,max,fmtFn,ttl,cls){ const bar=el("div","bar"+(cls?" "+cls:"")); bar.style.height=Math.max(6,100*v/(max||1))+"px"; bar.title=ttl; bar.innerHTML=`<span class="bcap">${fmtFn(v)}</span>`; return bar; }
+function dailyChartPanel(sr){
+  const hv=hasValue();
+  const byDay=new Map(); for(const r of sr){ let o=byDay.get(r.d); if(!o){o={u:0,g:0};byDay.set(r.d,o);} o.u+=r.qty; o.g+= hv?((priceFor(r)||0)*r.qty):0; }
+  const days=[...byDay.entries()].sort((a,b)=>a[0]<b[0]?-1:1);
+  const metric = hv ? DAILY_METRIC : "units";
+  const p=el("div","panel");
+  const ph=el("div","ph"); ph.innerHTML=`<h3>Daily sales</h3>`;
+  const ctrl=el("div"); ctrl.style.cssText="display:flex;gap:8px;align-items:center";
+  if(hv) ctrl.appendChild(segToggle([{v:"units",t:"Units"},{v:"gmv",t:"Sale amount"},{v:"both",t:"Both"}], metric, v=>{ DAILY_METRIC=v; render(); }));
+  ph.appendChild(ctrl); p.appendChild(ph);
+  const pb=el("div","pb"); const cols=el("div","cols");
+  if(metric==="both"){
+    const umax=Math.max(1,...days.map(d=>d[1].u)), gmax=Math.max(1,...days.map(d=>d[1].g));
+    days.forEach(([d,o])=>{ const c=el("div","col"); const pair=el("div","pair");
+      pair.appendChild(oneBar(o.u,umax,fmtInt,"Units "+fmtInt(o.u),"b-u")); pair.appendChild(oneBar(o.g,gmax,fmtINR,"Sale "+fmtINR(o.g),"b-g"));
+      c.appendChild(pair); c.appendChild(el("div","cl",dlabel(d))); cols.appendChild(c); });
+  } else {
+    const gmv=metric==="gmv"; const valOf=o=>gmv?o.g:o.u; const fmtFn=gmv?fmtINR:fmtInt;
+    const max=Math.max(1,...days.map(d=>valOf(d[1])));
+    days.forEach(([d,o])=>{ const c=el("div","col"); c.appendChild(oneBar(valOf(o),max,fmtFn,ymd(d)+" · "+fmtFn(valOf(o)))); c.appendChild(el("div","cl",dlabel(d))); cols.appendChild(c); });
+  }
+  pb.appendChild(cols);
+  if(metric==="both"){ const lg=el("div","chartlegend"); lg.innerHTML=`<span><span class="sw" style="background:var(--c-units)"></span>Units</span><span><span class="sw" style="background:var(--c-gmv)"></span>Sale amount</span>`; pb.appendChild(lg); }
+  p.appendChild(pb); return p;
+}
+function splitPanel(title, rows, keyFn, unitsFn, gmvFn, hv){
+  const metric = hv ? SPLIT_METRIC : "units";
+  const uArr=sumBy(rows,keyFn,unitsFn); const umap=new Map(uArr);
+  const gArr=hv?sumBy(rows,keyFn,gmvFn):[]; const gmap=new Map(gArr);
+  const keys=(metric==="gmv"?gArr:uArr).map(x=>x[0]).slice(0,12);
+  const umax=Math.max(1,...uArr.map(x=>x[1])), gmax=Math.max(1,...gArr.map(x=>x[1]),1);
+  const uTot=uArr.reduce((a,x)=>a+x[1],0)||1, gTot=gArr.reduce((a,x)=>a+x[1],0)||1;
+  const p=el("div","panel"); const ph=el("div","ph"); ph.innerHTML=`<h3>${title}</h3>`;
+  if(hv) ph.appendChild(segToggle([{v:"units",t:"Units"},{v:"gmv",t:"GMV"},{v:"both",t:"Both"}], SPLIT_METRIC, v=>{ SPLIT_METRIC=v; render(); }));
+  p.appendChild(ph);
+  const pb=el("div","pb");
+  keys.forEach((kk,idx)=>{ const u=umap.get(kk)||0, g=gmap.get(kk)||0; const row=el("div","barrow");
+    if(metric==="both"){
+      row.innerHTML=`<div class="bl" title="${kk}">${kk}</div>
+        <div class="bstack">
+          <div class="bartrack"><div class="barfill" style="width:${Math.max(2,100*u/umax)}%;background:var(--c-units)"></div></div>
+          <div class="bartrack"><div class="barfill" style="width:${Math.max(2,100*g/gmax)}%;background:var(--c-gmv)"></div></div>
+        </div>
+        <div class="bv">${fmtInt(u)}u<div class="muted" style="font-size:10px">${fmtINR(g)}</div></div>`;
+    } else {
+      const gmv=metric==="gmv"; const v=gmv?g:u; const max=gmv?gmax:umax; const col=`var(--cat${idx%8+1})`;
+      row.innerHTML=`<div class="bl" title="${kk}">${kk}</div><div class="bartrack"><div class="barfill" style="width:${Math.max(2,100*v/max)}%;background:${col}"></div></div><div class="bv">${gmv?fmtINR(v):fmtInt(v)}<div class="muted" style="font-size:10px">${gmv?fmtInt(u)+"u":pct(v,uTot).toFixed(0)+"%"}</div></div>`;
+    }
+    pb.appendChild(row); });
+  p.appendChild(pb); return p;
+}
+
+/* ---------- Amazon (period) helpers ---------- */
+function styleMeta(){ const m=new Map(); const b=STORE.myntra&&STORE.myntra.sor; if(b&&b.sales) b.sales.forEach(r=>{ if(!m.has(r.style)) m.set(r.style,{cat:r.cat,art:r.art}); }); return m; }
+function amazonRowsRaw(){ const b=STORE.amazon&&STORE.amazon.sor; if(!b||!b.rows) return []; const sm=styleMeta();
+  return b.rows.map(r=>{ const a=attrByIds(r.ean,r.asin); const meta=a.style?sm.get(a.style):null;
+    return { style:a.style||"", sku:r.asin, ean:r.ean, name:a.name||r.title||r.asin, colour:a.colour||"", size:a.size||"", cat:(meta&&meta.cat)||"—", art:(meta&&meta.art)||"—", units:r.units, gmv:r.rev, mrp:a.mrp||0 }; }); }
+function passLine(l){ if(FILTERS.cat!=="all" && l.cat!==FILTERS.cat) return false; if(FILTERS.products.size && !FILTERS.products.has(l.name)) return false; if(FILTERS.colours.size && !FILTERS.colours.has(l.colour||"")) return false; return true; }
+function amazonLines(){ return amazonRowsRaw().filter(passLine); }
+function taxOfLine(units, gross){ const up=units?gross/units:0; const rt=gstRate(up); return gross*rt/(1+rt); }
+
+/* ---------- PRODUCTS ---------- */
+// Products are at SKU/SIZE grain: one row per sold SKU (each size has its own GTIN & SP).
+function productRollup(){
+  if(SEL.mkt==="amazon") return amazonProductRows();
+  const sr=salesRange(); const m=new Map(); const hv=hasValue();
+  for(const r of sr){ const key=r.sku||r.style; let o=m.get(key); if(!o){ o={sku:r.sku,style:r.style,article:r.art,category:r.cat,units:0,last:"",_rows:[]}; m.set(key,o); }
+    o.units+=r.qty; o._rows.push(r); if(r.d>o.last)o.last=r.d; }
+  const rows=[...m.values()]; rows.forEach(o=>{
+    const a=attrOf(o);
+    o.gtin=a.gtin||""; o.name=a.name||""; o.colour=a.colour||""; o.size=a.size||""; o.mrp=a.mrp||0; o.lastSold=o.last?ymd(o.last):""; o.gkey=o.style;
+    if(hv){ const va=valueAgg(o._rows); o.gmv=va.gross; o.extax=va.ex; } else { o.gmv=0; o.extax=0; }
+    delete o._rows;
+  });
+  return rows;
+}
+// Amazon: one row per ASIN (a size). GMV = ordered revenue from the file; ex-tax via slab.
+// Group key = Myntra style_id when known, else product name + colour, so the default view is product+colour.
+function amazonProductRows(){
+  return amazonLines().map(l=>({ style:l.style, gkey:(l.style || (l.name+"‖"+l.colour)), sku:l.sku, gtin:l.ean, article:l.art, category:l.cat, name:l.name, colour:l.colour, size:l.size,
+    mrp:l.mrp, units:l.units, gmv:l.gmv, extax:l.gmv - taxOfLine(l.units,l.gmv), lastSold:"" }));
+}
+const PCOLS=[
+  {k:"style",label:"Style ID",def:true},
+  {k:"name",label:"Product Name",def:true},
+  {k:"colour",label:"Colour",def:true},
+  {k:"size",label:"Size"},          // enabling Size (or GTIN/SKU) expands to size-level rows
+  {k:"gtin",label:"GTIN"},
+  {k:"sku",label:"SKU code"},
+  {k:"units",label:"Units sold",fixed:true,num:true},
+  {k:"cunits",label:"% of units",def:true,num:true},
+  {k:"drr",label:"DRR (units/day)",def:true,num:true},
+  {k:"gmv",label:"GMV",def:true,num:true,val:true},
+  {k:"cgmv",label:"% of GMV",def:true,num:true,val:true},
+  {k:"extax",label:"Ex-tax sale amt",num:true,val:true},
+  {k:"mrp",label:"MRP",num:true},
+  {k:"article",label:"Article type"},
+  {k:"category",label:"Category"},
+  {k:"lastSold",label:"Last sold"},
+];
+PCOLS.forEach(c=>{ if(!(c.k in PROD_COLS)) PROD_COLS[c.k]=!!(c.fixed||c.def); });
+const STRCOLS=new Set(["style","gtin","name","colour","size","article","category","sku","lastSold"]);
+function renderProducts(app){
+  const rows=productRollup();
+  const hv=valueShown();
+  const units=rows.reduce((a,r)=>a+r.units,0), gross=rows.reduce((a,r)=>a+r.gmv,0), ex=rows.reduce((a,r)=>a+r.extax,0);
+  const k=el("div","kpis");
+  k.appendChild(tile("Units sold", fmtInt(units), "", !hv));
+  if(hv){ k.appendChild(tile("GMV (gross)", fmtINR(gross), "", true)); k.appendChild(tile("Value ex-tax", fmtINR(ex))); }
+  app.appendChild(k);
+  if(SEL.mkt==="amazon"){ const cap=el("div","capnote"); cap.innerHTML=`GMV = <b>Ordered Revenue</b> from the Amazon file · GST <b>5%</b> under ₹2,500, <b>18%</b> at ₹2,500+ · default is <b>product + colour</b> — add <b>Size</b> in <b>Columns ▾</b> for ASIN/size level.`; app.appendChild(cap); }
+  const p=el("div","panel");
+  p.innerHTML=`<div class="ph">
+    <div class="phL"><h3>Product performance <span class="sub" id="grainNote"></span></h3><span id="grainToggle"></span></div>
+    <div class="ptools">
+      <input type="search" id="prodSearch" placeholder="search…">
+      <div class="colpick"><button class="btn ghost" id="colBtn">Columns ▾</button><div class="colmenu" id="colMenu" hidden></div></div>
+      <span id="prodExport"></span>
+    </div></div>`;
+  const sc=el("div","tscroll"); sc.id="prodTableWrap"; p.appendChild(sc); app.appendChild(p);
+  $("#grainToggle").appendChild(segToggle([{v:"product",t:"Product"},{v:"prodcolour",t:"Product + colour"}], PROD_GRAIN, v=>{ PROD_GRAIN=v; render(); }));
+  const menu=$("#colMenu");
+  PCOLS.filter(c=>!c.fixed && (!c.val||hv)).forEach(c=>{ const lab=el("label"); lab.innerHTML=`<input type="checkbox" ${PROD_COLS[c.k]?"checked":""}> ${c.label}`;
+    lab.querySelector("input").addEventListener("change",e=>{ PROD_COLS[c.k]=e.target.checked; drawProdTable(currentRows); }); menu.appendChild(lab); });
+  $("#colBtn").addEventListener("click",e=>{ e.stopPropagation(); menu.hidden=!menu.hidden; });
+  menu.addEventListener("click",e=>e.stopPropagation());
+  $("#prodExport").appendChild(exportControl(()=>prodAOA(), ctxTag()+"-Products-"+rangeTag()));
+  $("#prodSearch").addEventListener("input",e=>{ const q=e.target.value.toLowerCase().trim();
+    drawProdTable(q?rows.filter(r=>(r.style+" "+r.sku+" "+r.name+" "+r.colour+" "+r.size+" "+r.article).toLowerCase().includes(q)):rows); });
+  drawProdTable(rows);
+  if(SEL.mkt==="amazon") app.appendChild(amazonContribChart());
+}
+// Contribution graph (Amazon): follows the same grain toggle as the table.
+function amazonContribChart(){
+  const lines=amazonLines();
+  const byColour = PROD_GRAIN==="prodcolour";
+  const keyFn = byColour ? (l=>l.name+(l.colour?" · "+l.colour:"")) : (l=>l.name);
+  return splitPanel("Contribution by "+(byColour?"product + colour":"product"), lines, keyFn, l=>l.units, l=>l.gmv, true);
+}
+// Aggregate the size-level rows up to one row per product (byColour=false) or product+colour (true).
+function aggToGrain(rows, byColour){ const m=new Map();
+  rows.forEach(r=>{ const nm=r.name||("#"+(r.style||r.gkey||"?")); const key=byColour?(nm+"‖"+(r.colour||"")):nm;
+    let o=m.get(key); if(!o){ o={gkey:key,style:byColour?(r.style||""):"",name:r.name,colour:byColour?(r.colour||""):"",article:r.article,category:r.category,gtin:"",size:"",sku:"",mrp:0,units:0,gmv:0,extax:0,lastSold:""}; m.set(key,o); }
+    o.units+=r.units; o.gmv+=r.gmv; o.extax+=r.extax; if(r.lastSold>o.lastSold)o.lastSold=r.lastSold; if(!o.name&&r.name)o.name=r.name; });
+  return [...m.values()]; }
+// Period totals for contribution %, over the whole marketplace/channel in the current window
+// and category scope — NOT narrowed by the product/colour multiselect (so % = share of total sales).
+function contribBase(){
+  if(SEL.mkt==="amazon"){ let u=0,g=0; amazonRowsRaw().forEach(l=>{ if(FILTERS.cat!=="all"&&l.cat!==FILTERS.cat) return; u+=l.units; g+=l.gmv; }); return {units:u,gmv:g}; }
+  const base=DATA.sales.filter(r=>inRange(r.d)&&passCat(r)); let u=0; base.forEach(r=>u+=r.qty);
+  const g=hasValue()?valueAgg(base).gross:0; return {units:u,gmv:g}; }
+let currentRows=[], PROD_DISPLAY=[];
+function prodCell(c,r){
+  switch(c.k){
+    case "style": return `<td class="mono">${r.style}</td>`;
+    case "gtin": return `<td class="mono">${r.gtin||""}</td>`;
+    case "name": return `<td>${r.name||"—"}</td>`;
+    case "colour": return `<td>${r.colour||""}</td>`;
+    case "size": return `<td>${r.size||""}</td>`;
+    case "units": return `<td class="tnum">${fmtInt(r.units)}</td>`;
+    case "cunits": return `<td class="tnum">${r.cunits!=null?(r.cunits*100).toFixed(1)+"%":""}</td>`;
+    case "drr": return `<td class="tnum">${r.drr!=null?r.drr.toFixed(1):""}</td>`;
+    case "gmv": return `<td class="tnum">${fmtINR(r.gmv)}</td>`;
+    case "cgmv": return `<td class="tnum">${r.cgmv!=null?(r.cgmv*100).toFixed(1)+"%":""}</td>`;
+    case "extax": return `<td class="tnum">${fmtINR(r.extax)}</td>`;
+    case "mrp": return `<td class="tnum">${r.mrp?fmtINR(r.mrp):""}</td>`;
+    case "article": return `<td>${r.article||""}</td>`;
+    case "lastSold": return `<td class="tnum">${r.lastSold||""}</td>`;
+    case "category": return `<td>${r.category?`<span class="cat">${r.category}</span>`:""}</td>`;
+    case "sku": return `<td class="mono">${r.sku||""}</td>`;
+    default: return `<td>${r[c.k]||""}</td>`;
+  }
+}
+function colLabel(c){
+  if(SEL.mkt==="amazon" && c.k==="sku") return "ASIN";
+  if(SEL.mkt==="flipkart"){ if(c.k==="sku") return "FSN"; if(c.k==="style") return "Item ID"; }
+  return c.label;
+}
+function visProdCols(){ const hv=valueShown(); let cols=PCOLS.filter(c=>(c.fixed||PROD_COLS[c.k]) && (!c.val||hv));
+  if(SEL.mkt==="amazon") cols=cols.filter(c=>c.k!=="style");  // Amazon shows ASIN, not the Myntra style id
+  if(PROD_GRAIN==="product" && !sizeGrainOn()) cols=cols.filter(c=>c.k!=="colour" && c.k!=="style"); // product level spans colours/styles
+  return cols; }
+function sizeGrainOn(){ return !!(PROD_COLS.size||PROD_COLS.gtin||PROD_COLS.sku); }
+function drawProdTable(rows){
+  currentRows=rows; const cols=visProdCols(); const s=PROD_SORT; const sizeGrain=sizeGrainOn();
+  let display = sizeGrain ? rows.slice() : aggToGrain(rows, PROD_GRAIN==="prodcolour");
+  const wd=windowDays(); const cb=contribBase();
+  display.forEach(r=>{ r.drr=r.units/wd; r.cunits=cb.units?r.units/cb.units:null; r.cgmv=cb.gmv?r.gmv/cb.gmv:null; });
+  display.sort((a,b)=>{ let x=a[s.key],y=b[s.key]; if(STRCOLS.has(s.key)){x=String(x||"").toLowerCase();y=String(y||"").toLowerCase(); return x<y?-s.dir:x>y?s.dir:0;} return ((x||0)-(y||0))*s.dir; });
+  PROD_DISPLAY=display;
+  let th="<tr>"+cols.map(c=>`<th data-k="${c.k}" class="${(c.num||c.val)?'tnum':''}">${colLabel(c)}${s.key===c.k?(s.dir<0?" ▾":" ▴"):""}</th>`).join("")+"</tr>";
+  let tb=""; display.slice(0,3000).forEach(r=>{ tb+="<tr>"+cols.map(c=>prodCell(c,r)).join("")+"</tr>"; });
+  const tot={units:0,gmv:0,extax:0}; display.forEach(r=>{ tot.units+=r.units; tot.gmv+=r.gmv; tot.extax+=r.extax; });
+  const totDrr=tot.units/wd;
+  tb+="<tr class='totrow'>"+cols.map((c,i)=>{ if(i===0) return `<td><b>Total · ${display.length}</b></td>`;
+    if(c.k==="units") return `<td class="tnum"><b>${fmtInt(tot.units)}</b></td>`;
+    if(c.k==="cunits") return `<td class="tnum"><b>${cb.units?((tot.units/cb.units)*100).toFixed(1)+"%":""}</b></td>`;
+    if(c.k==="drr") return `<td class="tnum"><b>${totDrr.toFixed(1)}</b></td>`;
+    if(c.k==="gmv") return `<td class="tnum"><b>${fmtINR(tot.gmv)}</b></td>`;
+    if(c.k==="cgmv") return `<td class="tnum"><b>${cb.gmv?((tot.gmv/cb.gmv)*100).toFixed(1)+"%":""}</b></td>`;
+    if(c.k==="extax") return `<td class="tnum"><b>${fmtINR(tot.extax)}</b></td>`;
+    return "<td></td>"; }).join("")+"</tr>";
+  const wrap=$("#prodTableWrap"); wrap.innerHTML=`<table><thead>${th}</thead><tbody>${tb}</tbody></table>`; makeResizable(wrap.querySelector("table"));
+  wrap.querySelectorAll("thead th[data-k]").forEach(h=>h.addEventListener("click",()=>{ const k=h.dataset.k; if(PROD_SORT.key===k)PROD_SORT.dir*=-1; else{PROD_SORT.key=k;PROD_SORT.dir=STRCOLS.has(k)?1:-1;} drawProdTable(currentRows); }));
+  const gn=$("#grainNote"); if(gn) gn.textContent = sizeGrainOn()?`· ${display.length} size-SKUs`:(PROD_GRAIN==="product"?`· ${display.length} products`:`· ${display.length} product-colours`);
+}
+function prodAOA(){
+  const cols=visProdCols();
+  const head=cols.map(c=>colLabel(c));
+  const body=PROD_DISPLAY.map(r=>cols.map(c=>{
+    if(c.k==="gmv")return Math.round(r.gmv); if(c.k==="extax")return Math.round(r.extax); if(c.k==="units")return r.units; if(c.k==="mrp")return r.mrp||"";
+    if(c.k==="drr")return r.drr!=null?+r.drr.toFixed(2):"";
+    if(c.k==="cunits")return r.cunits!=null?+(r.cunits*100).toFixed(2):""; if(c.k==="cgmv")return r.cgmv!=null?+(r.cgmv*100).toFixed(2):"";
+    return r[c.k]||""; }));
+  return [head,...body];
+}
+
+/* ---- filters UI ---------------------------------------------------------- */
+function refreshFilterOptions(){
+  const cm=currentMonth();
+  const opts=monthsInData().slice().reverse().map(ym=>({v:ym,t:monthLabel(ym)+(ym===cm?" (live)":"")}));
+  opts.push({v:"all",t:"All time"});
+  const sel=$("#fMonth"); sel.innerHTML=""; opts.forEach(o=>{ const e=el("option",null,o.t); e.value=o.v; sel.appendChild(e); });
+  sel.value=selectedMonth()&&monthsInData().includes(selectedMonth())?selectedMonth():"all";
+  const ds=salesDates(); if(ds.length){ $("#fFrom").min=$("#fTo").min=ymd(ds[0]); $("#fFrom").max=$("#fTo").max=ymd(ds[ds.length-1]); }
+  buildCatToggle();
+  buildProdFilters();
+}
+/* ---- product + colour multi-select filters (global, both tabs) ------------ */
+function multiSelect(host, label, options, selected, onChange){
+  host.innerHTML=""; const wrap=el("span","ms"); const btn=el("button","ms-btn");
+  const upd=()=>{ btn.innerHTML = label + (selected.size?` <span class="ms-cnt">(${selected.size})</span>`:"") + ` <span class="ms-arw">▾</span>`; };
+  upd();
+  const panel=el("div","ms-panel"); panel.hidden=true;
+  const search=el("input","ms-search"); search.type="search"; search.placeholder="Search…";
+  const list=el("div","ms-list");
+  const draw=(q)=>{ list.innerHTML=""; const fo=options.filter(o=>!q||o.t.toLowerCase().includes(q));
+    if(!fo.length){ list.innerHTML='<div class="ms-empty">Nothing to pick</div>'; return; }
+    fo.forEach(o=>{ const it=el("label","ms-item"); it.innerHTML=`<input type="checkbox" ${selected.has(o.v)?"checked":""}><span>${o.t}</span>`;
+      it.querySelector("input").addEventListener("change",e=>{ if(e.target.checked)selected.add(o.v); else selected.delete(o.v); upd(); onChange(); }); list.appendChild(it); }); };
+  draw("");
+  search.addEventListener("input",e=>draw(e.target.value.toLowerCase().trim()));
+  const clr=el("button","reset2"); clr.textContent="Clear"; clr.addEventListener("click",e=>{ e.preventDefault(); selected.clear(); draw(search.value.toLowerCase().trim()); upd(); onChange(); });
+  btn.addEventListener("click",e=>{ e.stopPropagation(); panel.hidden=!panel.hidden; });
+  panel.addEventListener("click",e=>e.stopPropagation());
+  panel.appendChild(search); panel.appendChild(list); panel.appendChild(clr);
+  wrap.appendChild(btn); wrap.appendChild(panel); host.appendChild(wrap);
+}
+function computeProductInfo(){ const m=new Map();  // key = product NAME (spans colours/style_ids)
+  const add=(nm,colour)=>{ if(!m.has(nm)) m.set(nm,{colours:new Set()}); if(colour) m.get(nm).colours.add(colour); };
+  if(SEL.mkt==="amazon"){ const b=STORE.amazon&&STORE.amazon.sor; if(b&&b.rows) b.rows.forEach(r=>{ const a=attrByIds(r.ean,r.asin); add(a.name||r.title||r.asin, a.colour); }); }
+  else DATA.sales.forEach(r=>{ const a=attrOf(r); add(a.name||r.sku||r.style, a.colour); });
+  return m; }
+function colourOptions(pi){ const set=new Set(); const scope=FILTERS.products.size?[...FILTERS.products]:[...pi.keys()]; scope.forEach(n=>{ const i=pi.get(n); if(i) i.colours.forEach(c=>set.add(c)); }); return [...set].sort(); }
+function buildProdFilters(){
+  const pi=computeProductInfo();
+  [...FILTERS.products].forEach(n=>{ if(!pi.has(n)) FILTERS.products.delete(n); });
+  const prodOpts=[...pi.keys()].sort().map(n=>({v:n,t:n}));
+  multiSelect($("#msProd"),"Products",prodOpts,FILTERS.products,()=>{ rebuildColour(); render(); });
+  rebuildColour();
+}
+function rebuildColour(){
+  const pi=computeProductInfo(); const valid=new Set(colourOptions(pi));
+  [...FILTERS.colours].forEach(c=>{ if(!valid.has(c)) FILTERS.colours.delete(c); });
+  multiSelect($("#msColour"),"Colours",[...valid].map(c=>({v:c,t:c})),FILTERS.colours,()=>render());
+}
+// Footwear / Apparel / Overall (built from the categories actually present)
+function buildCatToggle(){
+  const cont=$("#catToggle"); if(!cont) return;
+  const present = SEL.mkt==="amazon"
+    ? new Set(amazonRowsRaw().map(l=>l.cat).filter(c=>c&&c!=="—"))
+    : new Set(DATA.sales.map(r=>r.cat).filter(Boolean));
+  const cats=["Apparel","Footwear"].filter(c=>present.has(c));
+  if(FILTERS.cat!=="all" && !cats.includes(FILTERS.cat)) FILTERS.cat="all";
+  const opts=[{v:"all",t:"Overall"}].concat(cats.map(c=>({v:c,t:c})));
+  cont.innerHTML=opts.map(o=>`<button class="chip${FILTERS.cat===o.v?" active":""}" data-cat="${o.v}">${o.t}</button>`).join("");
+}
+function showCurrentMonth(){ const cm=currentMonth(); if(cm){ setMonth(cm); } else { FILTERS.from=FILTERS.to=null; render(); } }
+function applyPreset(p){ const ds=salesDates(); if(!ds.length) return; const last=ds[ds.length-1];
+  if(p==="all"){ FILTERS.from=ds[0]; FILTERS.to=last; }
+  else if(p==="7"){ FILTERS.to=last; FILTERS.from=ds[Math.max(0,ds.length-7)]; }
+  else if(p==="mtd"){ const cm=currentMonth(); FILTERS.from=cm?cm+"01":ds[0]; FILTERS.to=last; }
+  syncDateInputs(); markPreset(p); render(); }
+function markPreset(p){ document.querySelectorAll("#presets .chip").forEach(c=>c.classList.toggle("active",c.dataset.preset===p)); }
+
+/* ---- server sync --------------------------------------------------------- */
+async function loadFromServer(){
+  let any=false;
+  await Promise.all(CONCRETE_MKTS.flatMap(m=>CONCRETE_CHS.map(async c=>{
+    try{ const r=await fetch(`/api/data?mkt=${m}&ch=${c}`,{cache:"no-store",headers:{"x-dash-pw":viewPw()}}); if(r.status===401){ lockOut(); return; } if(r.status!==200) return;
+      const j=await r.json(); const b=bucket(m,c); b.sales=j.sales||[]; b.prices=j.prices||null; b.updated_at=j.updated_at||null;
+      if(j.kind) b.kind=j.kind; if(j.rows) b.rows=j.rows; if(j.period) b.period=j.period;
+      if(b.sales.length || (b.rows&&b.rows.length)) any=true;
+    }catch(e){} })));
+  return any;
+}
+const PUBLISH_LABEL = REQUIRE_PW ? "Publish to team" : "Save data";
+async function publish(){
+  const pw = $("#pw") ? $("#pw").value : "";
+  if(REQUIRE_PW && strHash(pw)!==PW_HASH){ toast("Wrong update password"); return; }
+  saveStore(); // always persist locally first
+  const jobs=[];
+  for(const m of CONCRETE_MKTS) for(const c of CONCRETE_CHS){ const b=STORE[m]&&STORE[m][c]; if(!b||(!b.sales.length&&!b.prices&&!(b.rows&&b.rows.length))) continue;
+    jobs.push({m,c,payload:{marketplace:m,channel:c,sales:b.sales,prices:b.prices||null,kind:b.kind||"daily",rows:b.rows||null,period:b.period||null,meta:{salesDays:new Set(b.sales.map(r=>r.d)).size,priced:b.prices?b.prices.n:0,asins:b.rows?b.rows.length:0}}}); }
+  if(!jobs.length){ toast("Nothing to save yet"); return; }
+  $("#publishBtn").textContent="Saving…"; $("#publishBtn").disabled=true;
+  try{
+    for(const j of jobs){ const r=await fetch(`/api/data?mkt=${j.m}&ch=${j.c}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:pw,payload:j.payload})}); const jj=await r.json(); if(!r.ok) throw new Error(jj.error||"failed"); bucket(j.m,j.c).updated_at=jj.updated_at; }
+    toast(`Published ${jobs.length} dataset(s) to the team ✓`); closeModal(); render();
+  }catch(e){ toast("Saved locally ✓ — deploy to publish to the team"); closeModal(); render(); } // no backend locally
+  finally{ $("#publishBtn").textContent=PUBLISH_LABEL; $("#publishBtn").disabled=false; }
+}
+
+/* ---- upload modal -------------------------------------------------------- */
+function openModal(){ $("#modalBg").classList.add("on"); }
+function closeModal(){ $("#modalBg").classList.remove("on"); }
+window.openModal=openModal;
+const GOOD_TYPES=new Set(["sales","prices","amazon","flipkart"]);
+function logIngest(res){ const box=$("#ingestLog"); const row=el("div","row");
+  const cls=GOOD_TYPES.has(res.type)?"ok":res.skip?"skip":"bad"; const mk=cls==="ok"?"✓":cls==="skip"?"–":"✕";
+  row.innerHTML=`<span class="${cls}">${mk}</span> <span class="mono" style="font-size:11px">${res.name}</span> <span class="muted">— ${res.msg}</span>`; box.appendChild(row); }
+// Read a dropped file into one CSV per sheet — supports .csv and Excel (.xlsx/.xls via SheetJS).
+// Excel workbooks can hold several sheets (e.g. Flipkart's QOH + Sales); each is tried separately.
+async function fileToSheets(f){
+  const n=f.name.toLowerCase();
+  if(n.endsWith(".xlsx")||n.endsWith(".xls")){
+    if(!window.XLSX) throw new Error("Excel reader still loading — try again in a moment");
+    const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+    return wb.SheetNames.map(sn=>({sheet:sn, csv:XLSX.utils.sheet_to_csv(wb.Sheets[sn])}));
+  }
+  return [{sheet:null, csv:await f.text()}];
+}
+async function handleFiles(files){
+  let any=false, dest=null;
+  for(const f of files){
+    let sheets; try{ sheets=await fileToSheets(f); }catch(e){ logIngest({name:f.name,type:null,msg:e.message}); continue; }
+    const results=sheets.map(s=>{ const nm=f.name+(s.sheet&&sheets.length>1?" · "+s.sheet:""); try{ return ingestText(nm, s.csv); }catch(e){ return {name:nm,type:null,msg:e.message}; } });
+    const good=results.filter(r=>GOOD_TYPES.has(r.type));
+    (good.length?good:results).forEach(logIngest);   // hide "unrecognised" noise when another sheet worked
+    good.forEach(res=>{ any=true; if(res.mkt) dest={mkt:res.mkt,ch:res.ch}; });
+  }
+  if(any){ if(dest){ SEL.mkt=dest.mkt; SEL.ch=dest.ch; } saveStore(); buildNav(); syncActive(); refreshFilterOptions(); showCurrentMonth(); toast("Data loaded & saved locally — publish to share with the team"); }
+}
+
+/* ---- boot ---------------------------------------------------------------- */
+function initTheme(){ const t=localStorage.getItem("tenx_theme"); if(t) document.documentElement.setAttribute("data-theme",t);
+  $("#themeBtn").addEventListener("click",()=>{ const cur=document.documentElement.getAttribute("data-theme"); const nx=cur==="dark"?"light":cur==="light"?"dark":(matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark"); document.documentElement.setAttribute("data-theme",nx); localStorage.setItem("tenx_theme",nx); }); }
+
+/* ---- colour palettes (user-selectable) ----------------------------------- */
+// accent-soft / accent-ink are derived via color-mix against theme tokens (--panel/--ink),
+// so one definition adapts to both light and dark automatically.
+const PALETTES={
+  emerald:{name:"Emerald", accent:"#0d9668", units:"#0d9668", gmv:"#e8590c"},
+  indigo: {name:"Indigo",  accent:"#4f46e5", units:"#4f46e5", gmv:"#f59f00"},
+  violet: {name:"Violet",  accent:"#7c3aed", units:"#7c3aed", gmv:"#0d9488"},
+  teal:   {name:"Teal",    accent:"#0e8f9e", units:"#0e8f9e", gmv:"#ef6c1a"},
+  rose:   {name:"Rose",    accent:"#e11d63", units:"#e11d63", gmv:"#2f74e0"},
+  amber:  {name:"Amber",   accent:"#c07a12", units:"#c07a12", gmv:"#2f74e0"},
+  slate:  {name:"Slate",   accent:"#4b5a72", units:"#4b5a72", gmv:"#2f9e6a"},
+};
+let PALETTE="emerald";
+function applyPalette(key){
+  const p=PALETTES[key]||PALETTES.emerald; const r=document.documentElement.style; PALETTE=PALETTES[key]?key:"emerald";
+  r.setProperty("--accent",p.accent);
+  r.setProperty("--accent-ink",`color-mix(in srgb, ${p.accent} 62%, var(--ink))`);
+  r.setProperty("--accent-soft",`color-mix(in srgb, ${p.accent} 13%, var(--panel))`);
+  r.setProperty("--brand-row",p.accent);
+  r.setProperty("--c-units",p.units); r.setProperty("--cat1",p.units);
+  r.setProperty("--c-gmv",p.gmv); r.setProperty("--cat2",p.gmv);
+  try{ localStorage.setItem("tenx_palette",key); }catch(e){}
+  const sw=$("#palSwatch"); if(sw) sw.style.background=p.accent;
+  const menu=$("#palMenu"); if(menu) menu.querySelectorAll(".palopt").forEach(o=>o.classList.toggle("on",o.dataset.pal===PALETTE));
+}
+function initPalette(){
+  let saved="emerald"; try{ saved=localStorage.getItem("tenx_palette")||"emerald"; }catch(e){}
+  const menu=$("#palMenu");
+  menu.innerHTML=Object.entries(PALETTES).map(([k,p])=>`<div class="palopt" data-pal="${k}"><span class="sw" style="background:${p.accent}"></span>${p.name}</div>`).join("");
+  menu.addEventListener("click",e=>{ const o=e.target.closest(".palopt"); if(!o)return; e.stopPropagation(); applyPalette(o.dataset.pal); menu.hidden=true; });
+  $("#palBtn").addEventListener("click",e=>{ e.stopPropagation(); menu.hidden=!menu.hidden; });
+  applyPalette(saved);
+}
+function updateCoverageChip(){
+  const chip=$("#covChip"); if(!chip) return;
+  if(SEL.mkt==="amazon"){ const per=STORE.amazon&&STORE.amazon.sor&&STORE.amazon.sor.period;
+    if(per){ chip.hidden=false; chip.innerHTML=`<span class="cal">🗓️</span> <b>${dlabel(per.from)} – ${dlabel(per.to)}</b>`; chip.title="Amazon period (from your ARA upload)"; }
+    else chip.hidden=true; return; }
+  const cov=coverageFor(SEL.mkt);
+  if(!cov){ chip.hidden=true; return; }
+  chip.hidden=false;
+  const parts=[];
+  if(cov.past) parts.push(`<b>${cov.past}</b>`);
+  if(cov.cur) parts.push(`<b>${cov.cur}</b> <span class="live">● live</span>`);
+  chip.innerHTML=`<span class="cal">🗓️</span> ${parts.join('<span class="csep">·</span>')||"—"}`;
+  chip.title=`Data coverage — ${ctxName().m}\nCompleted months: ${cov.past||"—"}\nLive month: ${cov.cur||"—"}`;
+}
+function wire(){
+  $("#mktTabs").addEventListener("click",e=>{ const b=e.target.closest(".mtab"); if(b) selectMarket(b.dataset.mkt); });
+  $("#chTabs").addEventListener("click",e=>{ const b=e.target.closest(".ctab"); if(b) selectChannel(b.dataset.ch); });
+  $("#viewTabs").addEventListener("click",e=>{ const b=e.target.closest(".tab"); if(!b)return; VIEW=b.dataset.view; document.querySelectorAll("#viewTabs .tab").forEach(t=>t.classList.toggle("active",t===b)); render(); });
+  $("#uploadBtn").addEventListener("click",openModal);
+  $("#modalClose").addEventListener("click",closeModal);
+  $("#modalBg").addEventListener("click",e=>{ if(e.target===$("#modalBg")) closeModal(); });
+  $("#publishBtn").addEventListener("click",publish);
+  $("#publishBtn").textContent=PUBLISH_LABEL; if(!REQUIRE_PW && $("#pwWrap")) $("#pwWrap").hidden=true;
+  document.addEventListener("click",()=>document.querySelectorAll(".colmenu,.ms-panel").forEach(m=>m.hidden=true));
+  document.querySelectorAll(".uzin").forEach(inp=>inp.addEventListener("change",e=>{ handleFiles([...e.target.files]); e.target.value=""; }));
+  document.querySelectorAll(".uz.drop").forEach(z=>{
+    ["dragenter","dragover"].forEach(ev=>z.addEventListener(ev,e=>{e.preventDefault();z.classList.add("hot");}));
+    ["dragleave","drop"].forEach(ev=>z.addEventListener(ev,e=>{e.preventDefault();z.classList.remove("hot");}));
+    z.addEventListener("drop",e=>{ if(e.dataTransfer?.files?.length) handleFiles([...e.dataTransfer.files]); }); });
+  $("#fFrom").addEventListener("change",e=>{ FILTERS.from=fromISO(e.target.value); markPreset(""); syncDateInputs(); render(); });
+  $("#fTo").addEventListener("change",e=>{ FILTERS.to=fromISO(e.target.value); markPreset(""); syncDateInputs(); render(); });
+  $("#fMonth").addEventListener("change",e=>setMonth(e.target.value));
+  $("#presets").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(c) applyPreset(c.dataset.preset); });
+  $("#catToggle").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(!c)return; FILTERS.cat=c.dataset.cat; buildCatToggle(); render(); });
+  $("#resetBtn").addEventListener("click",()=>{ FILTERS.cat="all"; FILTERS.products.clear(); FILTERS.colours.clear(); buildCatToggle(); buildProdFilters(); showCurrentMonth(); });
+}
+const IS_LOCAL=["localhost","127.0.0.1"].includes(location.hostname);
+async function loadSampleSeed(){ if(!IS_LOCAL) return false;
+  try{ const man=await fetch("/sample-data/manifest.json",{cache:"no-store"}); if(!man.ok) return false; const {files}=await man.json();
+    for(const f of files){ const t=await fetch("/sample-data/"+encodeURIComponent(f)).then(r=>r.text()); ingestText(f,t); } return true;
+  }catch(e){ return false; } }
+// Local persistence — uploaded sheets survive reloads until replaced (deployed truth is the Blob).
+const LS_KEY="tenx_mkt_store_v2";
+function saveStore(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(STORE)); }catch(e){} }
+function loadStore(){ try{ const s=localStorage.getItem(LS_KEY); if(!s) return false; const o=JSON.parse(s);
+  if(o&&typeof o==="object"){ STORE=o; return CONCRETE_MKTS.some(marketplaceHasData); } }catch(e){} return false; }
+// Myntra Dropship comes live from the ERP (api/dropship.js). Rows are {d, sku(=10xu SKU), qty, amt};
+// we enrich them with product attributes (via the mapping master) + category/article (from SOR),
+// then store them exactly like SOR sales so the same Overview/Products renderers apply.
+async function loadDropship(mkt){
+  let api=null, sample=false;
+  try{ const r=await fetch(`/api/dropship?channel=${mkt}`,{cache:"no-store",headers:{"x-dash-pw":viewPw()}}); if(r.ok) api=await r.json(); }catch(e){}
+  if((!api||!api.rows||!api.rows.length) && IS_LOCAL){
+    try{ const r=await fetch(`/sample-data/dropship_${mkt}.json`,{cache:"no-store"}); if(r.ok){ api=await r.json(); sample=true; } }catch(e){}
+  }
+  if(!api||!api.rows||!api.rows.length) return;
+  const sm=styleMeta();
+  const sales=api.rows.filter(r=>r.d&&num(r.qty)>0).map(r=>{ const a=attrByIds(r.sku)||{}; const st=a.style||""; const meta=st?sm.get(st):null;
+    return { d:String(r.d), sku:String(r.sku||""), style:st, qty:num(r.qty), amt:num(r.amt), cat:(meta&&meta.cat)||"—", art:(meta&&meta.art)||"—" }; });
+  const b=bucket(mkt,"dropship"); b.sales=sales; b.updated_at=api.updatedAt||null; b.source=sample?"sample":"erp"; b.sample=sample;
+}
+async function boot(){
+  buildNav(); wire();
+  let any=await loadFromServer();     // deployed: shared team data from Blob
+  if(!any) any=loadStore();           // local: your own uploads, persisted in this browser
+  if(!any) await loadSampleSeed();    // first-run local demo
+  MASTER = MASTER || (STORE.myntra && STORE.myntra.sor && STORE.myntra.sor.prices) || null;
+  await Promise.all(["myntra","flipkart"].map(loadDropship));   // Dropship — live from ERP (localhost uses sample fixtures)
+  ensureSelHasData(); buildNav(); syncActive(); refreshFilterOptions(); showCurrentMonth();
+}
+/* ---- viewing gate (app-level password, also enforced server-side) -------- */
+const VIEW_PW_HASH=1684824962; // strHash('98(75)')
+let BOOTED=false;
+function viewPw(){ try{ return sessionStorage.getItem("tenx_view_pw")||""; }catch(e){ return ""; } }
+function bootOnce(){ if(BOOTED) return; BOOTED=true; boot(); }
+function initGate(){
+  initTheme(); initPalette();   // theme the gate itself, before the app boots
+  const g=$("#gate");
+  $("#gateForm").addEventListener("submit",e=>{ e.preventDefault(); const v=$("#gatePw").value;
+    if(strHash(v)===VIEW_PW_HASH){ try{ sessionStorage.setItem("tenx_view_pw",v); }catch(err){} $("#gateErr").textContent=""; g.hidden=true; bootOnce(); }
+    else { $("#gateErr").textContent="Wrong password. Try again."; $("#gatePw").select(); } });
+  if(strHash(viewPw())===VIEW_PW_HASH){ g.hidden=true; bootOnce(); }
+  else { g.hidden=false; setTimeout(()=>{ const i=$("#gatePw"); if(i) i.focus(); },60); }
+}
+// If the server rejects the stored password (e.g. it was changed), fall back to the gate.
+function lockOut(){ try{ sessionStorage.removeItem("tenx_view_pw"); }catch(e){} BOOTED=false; $("#gate").hidden=false; setTimeout(()=>{ const i=$("#gatePw"); if(i) i.focus(); },60); }
+initGate();
+
+window.__dev={ state:()=>({sel:SEL,sales:DATA.sales.length,dates:salesDates(),store:Object.fromEntries(Object.entries(STORE).map(([m,chs])=>[m,Object.fromEntries(Object.entries(chs).map(([c,b])=>[c,{s:b.sales.length,p:b.prices?b.prices.n:0}]))]))}),
+  reset:()=>{ STORE={}; SEL={mkt:"myntra",ch:"sor"}; FILTERS={from:null,to:null}; buildNav(); render(); } };
+</script>
+</body>
+</html>
