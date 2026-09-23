@@ -15,7 +15,7 @@
 // Env vars on Vercel (same ERP as the stock/stockroom):  ERP_URL, ERP_API_KEY, ERP_API_SECRET
 // If they're not set this returns an empty list (the Dropship tab just shows "no data yet").
 
-const CACHE_MS = 10 * 60 * 1000; // 10-minute cache
+const CACHE_MS = 15 * 60 * 1000; // 15-minute cache
 let cache = {}; // keyed by `${channel}|${from}|${to}` -> { at, payload }
 let channelCache = null; // { field, values:[...] } once detected
 

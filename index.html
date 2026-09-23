@@ -207,6 +207,21 @@
   .bcap{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
   .pair{display:flex;gap:3px;align-items:flex-end;height:100%;width:100%;justify-content:center}
   .pair .bar{width:44%}
+  /* daily sales chart (taller, with an average line) */
+  .daychart{position:relative;padding-top:22px}
+  .dbars{display:flex;align-items:flex-end;gap:3px}
+  .dcol{flex:1;min-width:5px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+  .dcol .bar{position:relative;width:100%;border-radius:3px 3px 0 0;min-height:2px;background:var(--c-units)}
+  .dcol .bar.b-g{background:var(--c-gmv)}
+  .dcol .pair{display:flex;gap:3px;align-items:flex-end;width:100%;height:100%;justify-content:center}
+  .dcol .pair .bar{width:44%}
+  .avgline{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--accent);z-index:3;pointer-events:none}
+  .avgline.a-u{border-top-color:var(--c-units)} .avgline.a-g{border-top-color:var(--c-gmv)}
+  .avgcap{position:absolute;right:0;top:-16px;font-size:10.5px;font-weight:750;background:var(--panel);border:1px solid var(--line);padding:1px 7px;border-radius:5px;white-space:nowrap;color:var(--ink);box-shadow:var(--shadow)}
+  .avgline.a-u .avgcap{color:var(--c-units)} .avgline.a-g .avgcap{color:var(--c-gmv)}
+  .dlabels{display:flex;gap:3px;margin-top:4px}
+  .dlab{flex:1;min-width:5px;font-size:9px;color:var(--muted);white-space:nowrap;height:30px;display:flex;justify-content:center;align-items:flex-start}
+  .dlab span{transform:rotate(-90deg);transform-origin:center top;display:inline-block;margin-top:6px}
   /* segmented toggle */
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel-2)}
   .segb{border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:11.5px;font-weight:650;padding:6px 11px;cursor:pointer;border-left:1px solid var(--line)}
@@ -298,7 +313,6 @@
   </div>
 
   <div class="filters" id="filters">
-    <div class="fgroup" id="amzPeriod" hidden><label>Period (Amazon reports totals)</label><span class="periodpill" id="amzPeriodVal">—</span></div>
     <div class="fgroup datef"><label>Quick range</label>
       <div class="presets" id="presets">
         <button class="chip" data-preset="today">Today</button>
@@ -390,6 +404,7 @@ let BYMONTH_VIEW="table";   // table | chart
 let BYMONTH_METRIC="units"; // units | gmv
 let PROD_GRAIN="prodcolour"; // product | prodcolour — grain toggle for all product tables + Amazon contribution chart
 let COLLAPSED=new Set();    // minimized widget keys
+let ACTIVE_PRESET="mtd";    // remembered quick-range so it persists across tab switches
 
 function expandMkts(){ return SEL.mkt==="overall"?CONCRETE_MKTS:[SEL.mkt]; }
 function expandChs(){ return SEL.ch==="overall"?CONCRETE_CHS:[SEL.ch]; }
@@ -620,7 +635,12 @@ function applyBestMaster(results){
 }
 
 /* ---- filtering ----------------------------------------------------------- */
-function salesDates(){ return [...new Set(DATA.sales.map(r=>r.d))].sort(); }
+// Amazon has no day-level rows — it's a single period total. We give it a date basis (every
+// calendar day inside its reporting period) so the SAME date filter bar works everywhere.
+function amazonPeriod(){ const b=STORE.amazon&&STORE.amazon.sor; return (b&&b.period)||null; }
+function amazonPeriodDays(){ const p=amazonPeriod(); if(!p) return []; const out=[]; let d=new Date(ymd(p.from)); const end=new Date(ymd(p.to)); let g=0;
+  while(d<=end && g++<4000){ out.push(""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")); d.setDate(d.getDate()+1); } return out; }
+function salesDates(){ const d=[...new Set(DATA.sales.map(r=>r.d))].sort(); return (d.length||SEL.mkt!=="amazon") ? d : amazonPeriodDays(); }
 function inRange(d){ return (!FILTERS.from||d>=FILTERS.from) && (!FILTERS.to||d<=FILTERS.to); }
 function passCat(r){ return FILTERS.cat==="all" || r.cat===FILTERS.cat; }
 function attrOf(r){ if(!MASTER||!MASTER.attr) return {}; return MASTER.attr[normId(r.sku)]||MASTER.attr[normId(r.style)]||{}; }
@@ -635,13 +655,13 @@ function salesRange(){ return DATA.sales.filter(r=>inRange(r.d)&&passCat(r)&&pas
 function sumBy(rows, keyFn, valFn){ const m=new Map(); for(const r of rows){ const k=keyFn(r); m.set(k,(m.get(k)||0)+valFn(r)); } return [...m.entries()].sort((a,b)=>b[1]-a[1]); }
 
 /* ---- months -------------------------------------------------------------- */
-function monthsInData(){ return [...new Set(DATA.sales.map(r=>r.d.slice(0,6)))].sort(); }
+function monthsInData(){ return [...new Set(salesDates().map(d=>d.slice(0,6)))].sort(); }
 function currentMonth(){ const m=monthsInData(); return m.length?m[m.length-1]:null; }
 function monthLabel(ym){ if(!ym) return "—"; const d=new Date(+ym.slice(0,4),+ym.slice(4,6)-1,1); return d.toLocaleDateString("en-GB",{month:"short",year:"numeric"}); }
 function monthBounds(ym){ const y=+ym.slice(0,4),mo=+ym.slice(4,6); const last=new Date(y,mo,0).getDate(); return {from:ym+"01", to:ym+String(last).padStart(2,"0")}; }
 function prevMonthYm(ym){ const y=+ym.slice(0,4),m=+ym.slice(4,6); const d=new Date(y,m-2,1); return ""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0"); }
 function selectedMonth(){ if(!FILTERS.from||!FILTERS.to) return null; const a=FILTERS.from.slice(0,6),b=FILTERS.to.slice(0,6); return a===b?a:null; }
-function setMonth(ym){ if(ym==="all"){ const ds=salesDates(); if(!ds.length)return; FILTERS.from=ds[0]; FILTERS.to=ds[ds.length-1]; } else { const b=monthBounds(ym); FILTERS.from=b.from; FILTERS.to=b.to; } syncDateInputs(); render(); }
+function setMonth(ym){ ACTIVE_PRESET=(ym==="all"?"all":""); if(ym==="all"){ const ds=salesDates(); if(!ds.length)return; FILTERS.from=ds[0]; FILTERS.to=ds[ds.length-1]; } else { const b=monthBounds(ym); FILTERS.from=b.from; FILTERS.to=b.to; } markPreset(ACTIVE_PRESET); syncDateInputs(); render(); }
 function syncDateInputs(){ $("#fFrom").value=FILTERS.from?ymd(FILTERS.from):""; $("#fTo").value=FILTERS.to?ymd(FILTERS.to):""; const sm=selectedMonth(); $("#fMonth").value=sm&&monthsInData().includes(sm)?sm:"all"; }
 
 /* ---- data coverage (per marketplace) ------------------------------------ */
@@ -661,10 +681,7 @@ function render(){
   const az = STORE.amazon && STORE.amazon.sor;
   const hasData = isAmazon ? !!(az&&az.rows&&az.rows.length) : DATA.sales.length>0;
   $("#filters").style.display = hasData ? "" : "none";
-  document.querySelectorAll(".datef").forEach(e=>e.style.display = isAmazon?"none":"");   // only Amazon (period) has no dates
-  // Amazon reports one period (no day-level) — swap the date controls for a read-only Period pill
-  const amzP=$("#amzPeriod"); if(amzP){ amzP.hidden = !isAmazon;
-    if(isAmazon){ const per=az&&az.period; $("#amzPeriodVal").textContent = per?`${dlabel(per.from)} – ${dlabel(per.to)}`:"—"; } }
+  document.querySelectorAll(".datef").forEach(e=>e.style.display = "");   // same date filter row on every marketplace
   // Amazon is product-level only (no day-level) — hide the Overview/Products sub-tabs
   ["viewTabs","subSep","viewLbl"].forEach(id=>{ const e=$("#"+id); if(e) e.style.display = isAmazon ? "none" : ""; });
   const app=$("#app"); app.innerHTML="";
@@ -734,7 +751,12 @@ function ensureSelHasData(){
 }
 function selectMarket(id){ SEL.mkt=id; buildNav(); afterSelChange(); }
 function selectChannel(id){ SEL.ch=id; buildNav(); afterSelChange(); }
-function afterSelChange(){ syncActive(); refreshFilterOptions(); showCurrentMonth(); }
+// Switching tabs KEEPS the filters you've set (date range, category, products, colours).
+// Only fall back to the MTD default when nothing has been chosen yet (first landing).
+function afterSelChange(){ syncActive(); refreshFilterOptions();
+  if(FILTERS.from||FILTERS.to){ syncDateInputs(); markPreset(ACTIVE_PRESET); render(); }
+  else { showCurrentMonth(); }
+}
 
 /* ---------- OVERVIEW ---------- */
 function renderOverview(app){
@@ -865,18 +887,31 @@ function dailyChartPanel(sr){
   const ctrl=el("div"); ctrl.style.cssText="display:flex;gap:8px;align-items:center";
   if(hv) ctrl.appendChild(segToggle([{v:"units",t:"Units"},{v:"gmv",t:"Sale amount"},{v:"both",t:"Both"}], metric, v=>{ DAILY_METRIC=v; render(); }));
   ph.appendChild(ctrl); p.appendChild(ph);
-  const pb=el("div","pb"); const cols=el("div","cols");
+  const pb=el("div","pb");
+  const BARH=200;                                  // taller bar area (was ~100px)
+  const n=days.length||1;
+  const chart=el("div","daychart");
+  const bars=el("div","dbars"); bars.style.height=BARH+"px";
+  const bar=(v,max,cls,cap)=>{ const b=el("div","bar"+(cls?" "+cls:"")); b.style.height=Math.max(2,(v/(max||1))*BARH)+"px"; b.title=cap; b.innerHTML=`<span class="bcap">${cap.split(" · ").pop()}</span>`; return b; };
+  const avgLine=(avg,max,cls,label)=>{ const y=Math.max(0,Math.min(BARH,(avg/(max||1))*BARH)); const ln=el("div","avgline "+cls); ln.style.bottom=y+"px"; ln.innerHTML=`<span class="avgcap">${label}</span>`; return ln; };
   if(metric==="both"){
     const umax=Math.max(1,...days.map(d=>d[1].u)), gmax=Math.max(1,...days.map(d=>d[1].g));
-    days.forEach(([d,o])=>{ const c=el("div","col"); const pair=el("div","pair");
-      pair.appendChild(oneBar(o.u,umax,fmtInt,"Units "+fmtInt(o.u),"b-u")); pair.appendChild(oneBar(o.g,gmax,fmtINR,"Sale "+fmtINR(o.g),"b-g"));
-      c.appendChild(pair); c.appendChild(el("div","cl",dlabel(d))); cols.appendChild(c); });
+    days.forEach(([d,o])=>{ const c=el("div","dcol"); const pair=el("div","pair");
+      pair.appendChild(bar(o.u,umax,"b-u","Units · "+fmtInt(o.u))); pair.appendChild(bar(o.g,gmax,"b-g","Sale · "+fmtINR(o.g)));
+      c.appendChild(pair); bars.appendChild(c); });
+    const uAvg=days.reduce((a,d)=>a+d[1].u,0)/n, gAvg=days.reduce((a,d)=>a+d[1].g,0)/n;
+    chart.appendChild(avgLine(uAvg,umax,"a-u","Avg "+fmtInt(uAvg)+" units/day"));
+    chart.appendChild(avgLine(gAvg,gmax,"a-g","Avg "+fmtINR(gAvg)+"/day"));
   } else {
     const gmv=metric==="gmv"; const valOf=o=>gmv?o.g:o.u; const fmtFn=gmv?fmtINR:fmtInt;
     const max=Math.max(1,...days.map(d=>valOf(d[1])));
-    days.forEach(([d,o])=>{ const c=el("div","col"); c.appendChild(oneBar(valOf(o),max,fmtFn,ymd(d)+" · "+fmtFn(valOf(o)))); c.appendChild(el("div","cl",dlabel(d))); cols.appendChild(c); });
+    days.forEach(([d,o])=>{ const c=el("div","dcol"); c.appendChild(bar(valOf(o),max,gmv?"b-g":"b-u",ymd(d)+" · "+fmtFn(valOf(o)))); bars.appendChild(c); });
+    const avg=days.reduce((a,d)=>a+valOf(d[1]),0)/n;
+    chart.appendChild(avgLine(avg,max,gmv?"a-g":"a-u","Avg "+fmtFn(avg)+(gmv?"/day":" units/day")));
   }
-  pb.appendChild(cols);
+  chart.appendChild(bars);
+  const labels=el("div","dlabels"); days.forEach(([d])=>{ const l=el("div","dlab"); l.innerHTML=`<span>${dlabel(d)}</span>`; labels.appendChild(l); });
+  pb.appendChild(chart); pb.appendChild(labels);
   if(metric==="both"){ const lg=el("div","chartlegend"); lg.innerHTML=`<span><span class="sw" style="background:var(--c-units)"></span>Units</span><span><span class="sw" style="background:var(--c-gmv)"></span>Sale amount</span>`; pb.appendChild(lg); }
   p.appendChild(pb); return p;
 }
@@ -913,7 +948,10 @@ function amazonRowsRaw(){ const b=STORE.amazon&&STORE.amazon.sor; if(!b||!b.rows
   return b.rows.map(r=>{ const a=attrByIds(r.ean,r.asin); const meta=a.style?sm.get(a.style):null;
     return { style:a.style||"", sku:r.asin, ean:r.ean, name:a.name||r.title||r.asin, colour:a.colour||"", size:a.size||"", cat:(meta&&meta.cat)||"—", art:(meta&&meta.art)||"—", units:r.units, gmv:r.rev, mrp:a.mrp||0 }; }); }
 function passLine(l){ if(FILTERS.cat!=="all" && l.cat!==FILTERS.cat) return false; if(FILTERS.products.size && !FILTERS.products.has(l.name)) return false; if(FILTERS.colours.size && !FILTERS.colours.has(l.colour||"")) return false; return true; }
-function amazonLines(){ return amazonRowsRaw().filter(passLine); }
+// Amazon is one period total (can't be sliced by day). Show it whenever the selected date
+// window overlaps the reporting period; otherwise it's out of range → empty.
+function amazonInWindow(){ const p=amazonPeriod(); if(!p||!FILTERS.from||!FILTERS.to) return true; return !(FILTERS.to<p.from || FILTERS.from>p.to); }
+function amazonLines(){ return amazonInWindow() ? amazonRowsRaw().filter(passLine) : []; }
 function taxOfLine(units, gross){ const up=units?gross/units:0; const rt=gstRate(up); return gross*rt/(1+rt); }
 
 /* ---------- PRODUCTS ---------- */
@@ -921,11 +959,13 @@ function taxOfLine(units, gross){ const up=units?gross/units:0; const rt=gstRate
 function productRollup(){
   if(SEL.mkt==="amazon") return amazonProductRows();
   const sr=salesRange(); const m=new Map(); const hv=hasValue();
-  for(const r of sr){ const key=r.sku||r.style; let o=m.get(key); if(!o){ o={sku:r.sku,style:r.style,article:r.art,category:r.cat,units:0,last:"",_rows:[]}; m.set(key,o); }
-    o.units+=r.qty; o._rows.push(r); if(r.d>o.last)o.last=r.d; }
+  // Always keep the day on each row (one row per SKU per date); aggProducts() collapses dates
+  // unless the Date column is on, so a date-level export is one toggle away.
+  for(const r of sr){ const key=(r.sku||r.style)+"|"+r.d; let o=m.get(key); if(!o){ o={sku:r.sku,style:r.style,d:r.d,article:r.art,category:r.cat,units:0,_rows:[]}; m.set(key,o); }
+    o.units+=r.qty; o._rows.push(r); }
   const rows=[...m.values()]; rows.forEach(o=>{
     const a=attrOf(o);
-    o.gtin=a.gtin||""; o.name=a.name||""; o.colour=a.colour||""; o.size=a.size||""; o.mrp=a.mrp||0; o.lastSold=o.last?ymd(o.last):""; o.gkey=o.style;
+    o.gtin=a.gtin||""; o.name=a.name||""; o.colour=a.colour||""; o.size=a.size||""; o.mrp=a.mrp||0; o.gkey=o.style;
     if(hv){ const va=valueAgg(o._rows); o.gmv=va.gross; o.extax=va.ex; } else { o.gmv=0; o.extax=0; }
     delete o._rows;
   });
@@ -934,13 +974,15 @@ function productRollup(){
 // Amazon: one row per ASIN (a size). GMV = ordered revenue from the file; ex-tax via slab.
 // Group key = Myntra style_id when known, else product name + colour, so the default view is product+colour.
 function amazonProductRows(){
+  const per=amazonPeriod(); const dt=per?per.to:"";   // Amazon = one period total; date = period end
   return amazonLines().map(l=>({ style:l.style, gkey:(l.style || (l.name+"‖"+l.colour)), sku:l.sku, gtin:l.ean, article:l.art, category:l.cat, name:l.name, colour:l.colour, size:l.size,
-    mrp:l.mrp, units:l.units, gmv:l.gmv, extax:l.gmv - taxOfLine(l.units,l.gmv), lastSold:"" }));
+    mrp:l.mrp, units:l.units, gmv:l.gmv, extax:l.gmv - taxOfLine(l.units,l.gmv), d:dt }));
 }
 const PCOLS=[
   {k:"style",label:"Style ID",def:true},
   {k:"name",label:"Product Name",def:true},
   {k:"colour",label:"Colour",def:true},
+  {k:"date",label:"Date"},          // enabling Date breaks each product down into per-day rows (for export)
   {k:"size",label:"Size"},          // enabling Size (or GTIN/SKU) expands to size-level rows
   {k:"gtin",label:"GTIN"},
   {k:"sku",label:"SKU code"},
@@ -953,10 +995,10 @@ const PCOLS=[
   {k:"mrp",label:"MRP",num:true},
   {k:"article",label:"Article type"},
   {k:"category",label:"Category"},
-  {k:"lastSold",label:"Last sold"},
 ];
 PCOLS.forEach(c=>{ if(!(c.k in PROD_COLS)) PROD_COLS[c.k]=!!(c.fixed||c.def); });
-const STRCOLS=new Set(["style","gtin","name","colour","size","article","category","sku","lastSold"]);
+const STRCOLS=new Set(["style","gtin","name","colour","size","article","category","sku","date"]);
+function dateGrainOn(){ return !!PROD_COLS.date; }
 function renderProducts(app){
   const rows=productRollup();
   const hv=valueShown();
@@ -965,7 +1007,9 @@ function renderProducts(app){
   k.appendChild(tile("Units sold", fmtInt(units), "", !hv));
   if(hv){ k.appendChild(tile("GMV (gross)", fmtINR(gross), "", true)); k.appendChild(tile("Value ex-tax", fmtINR(ex))); }
   app.appendChild(k);
-  if(SEL.mkt==="amazon"){ const cap=el("div","capnote"); cap.innerHTML=`GMV = <b>Ordered Revenue</b> from the Amazon file · GST <b>5%</b> under ₹2,500, <b>18%</b> at ₹2,500+ · default is <b>product + colour</b> — add <b>Size</b> in <b>Columns ▾</b> for ASIN/size level.`; app.appendChild(cap); }
+  if(SEL.mkt==="amazon"){ const per=amazonPeriod(); const cap=el("div","capnote");
+    cap.innerHTML=`GMV = <b>Ordered Revenue</b> from the Amazon file · GST <b>5%</b> under ₹2,500, <b>18%</b> at ₹2,500+ · default is <b>product + colour</b> — add <b>Size</b> in <b>Columns ▾</b> for ASIN/size level.${per?` <b>Note:</b> Amazon reports one total for <b>${dlabel(per.from)} – ${dlabel(per.to)}</b>, so the numbers are for that whole period — a shorter date range can't split it (upload Amazon monthly for month-level).`:""}`;
+    app.appendChild(cap); }
   const p=el("div","panel");
   p.innerHTML=`<div class="ph">
     <div class="phL"><h3>Product performance <span class="sub" id="grainNote"></span></h3><span id="grainToggle"></span></div>
@@ -995,10 +1039,18 @@ function amazonContribChart(){
   return splitPanel("Contribution by "+(byColour?"product + colour":"product"), lines, keyFn, l=>l.units, l=>l.gmv, true);
 }
 // Aggregate the size-level rows up to one row per product (byColour=false) or product+colour (true).
-function aggToGrain(rows, byColour){ const m=new Map();
-  rows.forEach(r=>{ const nm=r.name||("#"+(r.style||r.gkey||"?")); const key=byColour?(nm+"‖"+(r.colour||"")):nm;
-    let o=m.get(key); if(!o){ o={gkey:key,style:byColour?(r.style||""):"",name:r.name,colour:byColour?(r.colour||""):"",article:r.article,category:r.category,gtin:"",size:"",sku:"",mrp:0,units:0,gmv:0,extax:0,lastSold:""}; m.set(key,o); }
-    o.units+=r.units; o.gmv+=r.gmv; o.extax+=r.extax; if(r.lastSold>o.lastSold)o.lastSold=r.lastSold; if(!o.name&&r.name)o.name=r.name; });
+// Collapse the per-(SKU,date) rows to the grain the user has chosen, live at draw time:
+// Size on → per SKU · else Product / Product+colour; Date on → also split by day (else summed across days).
+function aggProducts(rows){
+  const dg=dateGrainOn(), size=sizeGrainOn(), byColour=(PROD_GRAIN==="prodcolour"); const m=new Map();
+  rows.forEach(r=>{ const nm=r.name||("#"+(r.style||r.gkey||"?")); const dk=dg?(r.d||""):"";
+    const gk = size ? (r.sku||r.gtin||r.style||nm) : (byColour ? nm+"‖"+(r.colour||"") : nm);
+    let o=m.get(gk+"|"+dk);
+    if(!o){ o={ gkey:gk, d:dk, name:r.name, article:r.article, category:r.category, units:0, gmv:0, extax:0,
+      style:(size||byColour)?(r.style||""):"", colour:(size||byColour)?(r.colour||""):"",
+      sku:size?(r.sku||""):"", gtin:size?(r.gtin||""):"", size:size?(r.size||""):"", mrp:size?(r.mrp||0):0 };
+      m.set(gk+"|"+dk,o); }
+    o.units+=r.units; o.gmv+=r.gmv; o.extax+=r.extax; if(!o.name&&r.name)o.name=r.name; });
   return [...m.values()]; }
 // Period totals for contribution %, over the whole marketplace/channel in the current window
 // and category scope — NOT narrowed by the product/colour multiselect (so % = share of total sales).
@@ -1022,7 +1074,7 @@ function prodCell(c,r){
     case "extax": return `<td class="tnum">${fmtINR(r.extax)}</td>`;
     case "mrp": return `<td class="tnum">${r.mrp?fmtINR(r.mrp):""}</td>`;
     case "article": return `<td>${r.article||""}</td>`;
-    case "lastSold": return `<td class="tnum">${r.lastSold||""}</td>`;
+    case "date": return `<td class="tnum">${r.d?ymd(r.d):""}</td>`;
     case "category": return `<td>${r.category?`<span class="cat">${r.category}</span>`:""}</td>`;
     case "sku": return `<td class="mono">${r.sku||""}</td>`;
     default: return `<td>${r[c.k]||""}</td>`;
@@ -1039,8 +1091,8 @@ function visProdCols(){ const hv=valueShown(); let cols=PCOLS.filter(c=>(c.fixed
   return cols; }
 function sizeGrainOn(){ return !!(PROD_COLS.size||PROD_COLS.gtin||PROD_COLS.sku); }
 function drawProdTable(rows){
-  currentRows=rows; const cols=visProdCols(); const s=PROD_SORT; const sizeGrain=sizeGrainOn();
-  let display = sizeGrain ? rows.slice() : aggToGrain(rows, PROD_GRAIN==="prodcolour");
+  currentRows=rows; const cols=visProdCols(); const s=PROD_SORT;
+  let display = aggProducts(rows);
   const wd=windowDays(); const cb=contribBase();
   display.forEach(r=>{ r.drr=r.units/wd; r.cunits=cb.units?r.units/cb.units:null; r.cgmv=cb.gmv?r.gmv/cb.gmv:null; });
   display.sort((a,b)=>{ let x=a[s.key],y=b[s.key]; if(STRCOLS.has(s.key)){x=String(x||"").toLowerCase();y=String(y||"").toLowerCase(); return x<y?-s.dir:x>y?s.dir:0;} return ((x||0)-(y||0))*s.dir; });
@@ -1059,7 +1111,7 @@ function drawProdTable(rows){
     return "<td></td>"; }).join("")+"</tr>";
   const wrap=$("#prodTableWrap"); wrap.innerHTML=`<table><thead>${th}</thead><tbody>${tb}</tbody></table>`; makeResizable(wrap.querySelector("table"));
   wrap.querySelectorAll("thead th[data-k]").forEach(h=>h.addEventListener("click",()=>{ const k=h.dataset.k; if(PROD_SORT.key===k)PROD_SORT.dir*=-1; else{PROD_SORT.key=k;PROD_SORT.dir=STRCOLS.has(k)?1:-1;} drawProdTable(currentRows); }));
-  const gn=$("#grainNote"); if(gn) gn.textContent = sizeGrainOn()?`· ${display.length} size-SKUs`:(PROD_GRAIN==="product"?`· ${display.length} products`:`· ${display.length} product-colours`);
+  const gn=$("#grainNote"); if(gn){ const base=sizeGrainOn()?"size-SKUs":(PROD_GRAIN==="product"?"products":"product-colours"); gn.textContent=`· ${display.length} ${base}${dateGrainOn()?" × date":""}`; }
 }
 function prodAOA(){
   const cols=visProdCols();
@@ -1068,6 +1120,7 @@ function prodAOA(){
     if(c.k==="gmv")return Math.round(r.gmv); if(c.k==="extax")return Math.round(r.extax); if(c.k==="units")return r.units; if(c.k==="mrp")return r.mrp||"";
     if(c.k==="drr")return r.drr!=null?+r.drr.toFixed(2):"";
     if(c.k==="cunits")return r.cunits!=null?+(r.cunits*100).toFixed(2):""; if(c.k==="cgmv")return r.cgmv!=null?+(r.cgmv*100).toFixed(2):"";
+    if(c.k==="date")return r.d?ymd(r.d):"";
     return r[c.k]||""; }));
   return [head,...body];
 }
@@ -1079,7 +1132,8 @@ function refreshFilterOptions(){
   opts.push({v:"all",t:"All time"});
   const sel=$("#fMonth"); sel.innerHTML=""; opts.forEach(o=>{ const e=el("option",null,o.t); e.value=o.v; sel.appendChild(e); });
   sel.value=selectedMonth()&&monthsInData().includes(selectedMonth())?selectedMonth():"all";
-  const ds=salesDates(); if(ds.length){ $("#fFrom").min=$("#fTo").min=ymd(ds[0]); $("#fFrom").max=$("#fTo").max=ymd(ds[ds.length-1]); }
+  const ds=salesDates(); if(ds.length){ const T=new Date(); const today=T.getFullYear()+"-"+String(T.getMonth()+1).padStart(2,"0")+"-"+String(T.getDate()).padStart(2,"0");
+    $("#fFrom").min=$("#fTo").min=ymd(ds[0]); $("#fFrom").max=$("#fTo").max=today; }
   buildCatToggle();
   buildProdFilters();
 }
@@ -1134,16 +1188,17 @@ function buildCatToggle(){
 }
 // Default landing range = MTD (month-to-date of the latest data), for every marketplace/channel.
 function showCurrentMonth(){ const ds=salesDates(); if(ds.length){ applyPreset("mtd"); } else { FILTERS.from=FILTERS.to=null; render(); } }
-// Quick ranges anchor to the latest date that has data (so a preset always lands on real data).
-function applyPreset(p){ const ds=salesDates(); if(!ds.length) return; const last=ds[ds.length-1];
-  const ymdOf=d=>""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
-  const L=new Date(ymd(last)); const back=n=>{ const d=new Date(L); d.setDate(d.getDate()-n); return ymdOf(d); };
-  if(p==="today"){ FILTERS.from=FILTERS.to=last; }
+// Quick ranges anchor to the ACTUAL calendar day (so "Today" means today — it shows empty if
+// nothing sold today, rather than silently jumping to the last day that had a sale).
+function applyPreset(p){ ACTIVE_PRESET=p; const ds=salesDates();
+  const T=new Date(); const ymdOf=d=>""+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  const today=ymdOf(T); const back=n=>{ const d=new Date(T); d.setDate(d.getDate()-n); return ymdOf(d); };
+  if(p==="today"){ FILTERS.from=FILTERS.to=today; }
   else if(p==="yesterday"){ FILTERS.from=FILTERS.to=back(1); }
-  else if(p==="7"){ FILTERS.from=back(6); FILTERS.to=last; }
-  else if(p==="mtd"){ FILTERS.from=last.slice(0,6)+"01"; FILTERS.to=last; }
-  else if(p==="ytd"){ FILTERS.from=last.slice(0,4)+"0101"; FILTERS.to=last; }
-  else if(p==="all"){ FILTERS.from=ds[0]; FILTERS.to=last; }
+  else if(p==="7"){ FILTERS.from=back(6); FILTERS.to=today; }
+  else if(p==="mtd"){ FILTERS.from=today.slice(0,6)+"01"; FILTERS.to=today; }
+  else if(p==="ytd"){ FILTERS.from=today.slice(0,4)+"0101"; FILTERS.to=today; }
+  else if(p==="all"){ if(!ds.length){ FILTERS.from=FILTERS.to=null; } else { FILTERS.from=ds[0]; FILTERS.to=ds[ds.length-1]; } }
   syncDateInputs(); markPreset(p); render(); }
 function markPreset(p){ document.querySelectorAll("#presets .chip").forEach(c=>c.classList.toggle("active",c.dataset.preset===p)); }
 
@@ -1279,8 +1334,8 @@ function wire(){
     ["dragenter","dragover"].forEach(ev=>z.addEventListener(ev,e=>{e.preventDefault();z.classList.add("hot");}));
     ["dragleave","drop"].forEach(ev=>z.addEventListener(ev,e=>{e.preventDefault();z.classList.remove("hot");}));
     z.addEventListener("drop",e=>{ if(e.dataTransfer?.files?.length) handleFiles([...e.dataTransfer.files]); }); });
-  $("#fFrom").addEventListener("change",e=>{ FILTERS.from=fromISO(e.target.value); markPreset(""); syncDateInputs(); render(); });
-  $("#fTo").addEventListener("change",e=>{ FILTERS.to=fromISO(e.target.value); markPreset(""); syncDateInputs(); render(); });
+  $("#fFrom").addEventListener("change",e=>{ FILTERS.from=fromISO(e.target.value); ACTIVE_PRESET=""; markPreset(""); syncDateInputs(); render(); });
+  $("#fTo").addEventListener("change",e=>{ FILTERS.to=fromISO(e.target.value); ACTIVE_PRESET=""; markPreset(""); syncDateInputs(); render(); });
   $("#fMonth").addEventListener("change",e=>setMonth(e.target.value));
   $("#presets").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(c) applyPreset(c.dataset.preset); });
   $("#catToggle").addEventListener("click",e=>{ const c=e.target.closest(".chip"); if(!c)return; FILTERS.cat=c.dataset.cat; buildCatToggle(); render(); });
@@ -1297,29 +1352,44 @@ const LS_KEY="tenx_mkt_store_v2";
 function saveStore(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(STORE)); }catch(e){} }
 function loadStore(){ try{ const s=localStorage.getItem(LS_KEY); if(!s) return false; const o=JSON.parse(s);
   if(o&&typeof o==="object"){ STORE=o; return CONCRETE_MKTS.some(marketplaceHasData); } }catch(e){} return false; }
-// Myntra Dropship comes live from the ERP (api/dropship.js). Rows are {d, sku(=10xu SKU), qty, amt};
-// we enrich them with product attributes (via the mapping master) + category/article (from SOR),
-// then store them exactly like SOR sales so the same Overview/Products renderers apply.
-async function loadDropship(mkt){
-  let api=null, sample=false;
-  try{ const r=await fetch(`/api/dropship?channel=${mkt}`,{cache:"no-store",headers:{"x-dash-pw":viewPw()}}); if(r.ok) api=await r.json(); }catch(e){}
-  if((!api||!api.rows||!api.rows.length) && IS_LOCAL){
-    try{ const r=await fetch(`/sample-data/dropship_${mkt}.json`,{cache:"no-store"}); if(r.ok){ api=await r.json(); sample=true; } }catch(e){}
-  }
+// Dropship comes live from the ERP (api/dropship.js). Rows are {d, sku(=10xu SKU), qty, amt}; we
+// enrich them via the mapping master + SOR category/article, then store them like SOR sales.
+// To keep the dashboard snappy we CACHE the pull in localStorage for 15 min: the page renders
+// instantly from cache and only re-hits the (slow) ERP in the background when the cache is stale.
+const DROP_TTL=15*60*1000;
+function dropCacheGet(){ try{ return JSON.parse(localStorage.getItem("tenx_dropship_cache")||"{}"); }catch(e){ return {}; } }
+function dropCacheSet(c){ try{ localStorage.setItem("tenx_dropship_cache", JSON.stringify(c)); }catch(e){} }
+function ingestDropshipApi(mkt, api, sample){
   if(!api||!api.rows||!api.rows.length) return;
   const sm=styleMeta();
   const sales=api.rows.filter(r=>r.d&&num(r.qty)>0).map(r=>{ const a=attrByIds(r.sku)||{}; const st=a.style||""; const meta=st?sm.get(st):null;
     return { d:String(r.d), sku:String(r.sku||""), style:st, qty:num(r.qty), amt:num(r.amt), cat:(meta&&meta.cat)||"—", art:(meta&&meta.art)||"—" }; });
-  const b=bucket(mkt,"dropship"); b.sales=sales; b.updated_at=api.updatedAt||null; b.source=sample?"sample":"erp"; b.sample=sample;
+  const b=bucket(mkt,"dropship"); b.sales=sales; b.updated_at=api.updatedAt||null; b.source=sample?"sample":"erp"; b.sample=!!sample;
 }
+function loadDropshipFromCache(){ const c=dropCacheGet(); const now=Date.now();
+  ["myntra","flipkart"].forEach(mkt=>{ const e=c[mkt]; if(e&&e.api&&(now-e.at<DROP_TTL)) ingestDropshipApi(mkt,e.api,e.sample); }); }
+async function refreshDropship(mkt, force){
+  const c=dropCacheGet(); const e=c[mkt]; if(!force && e && Date.now()-e.at<DROP_TTL) return false;   // still fresh
+  let api=null, sample=false;
+  try{ const r=await fetch(`/api/dropship?channel=${mkt}`,{cache:"no-store",headers:{"x-dash-pw":viewPw()}}); if(r.ok) api=await r.json(); }catch(err){}
+  if((!api||!api.rows||!api.rows.length) && IS_LOCAL){ try{ const r=await fetch(`/sample-data/dropship_${mkt}.json`,{cache:"no-store"}); if(r.ok){ api=await r.json(); sample=true; } }catch(err){} }
+  if(!api||!api.rows||!api.rows.length) return false;
+  ingestDropshipApi(mkt,api,sample);
+  const cc=dropCacheGet(); cc[mkt]={at:Date.now(),api,sample}; dropCacheSet(cc);
+  return true;
+}
+async function refreshDropshipAll(force){ let any=false;
+  for(const mkt of ["myntra","flipkart"]){ try{ if(await refreshDropship(mkt,force)) any=true; }catch(e){} }
+  if(any){ syncActive(); refreshFilterOptions(); render(); } }
 async function boot(){
   buildNav(); wire();
   let any=await loadFromServer();     // deployed: shared team data from Blob
   if(!any) any=loadStore();           // local: your own uploads, persisted in this browser
   if(!any) await loadSampleSeed();    // first-run local demo
   MASTER = MASTER || (STORE.myntra && STORE.myntra.sor && STORE.myntra.sor.prices) || null;
-  await Promise.all(["myntra","flipkart"].map(loadDropship));   // Dropship — live from ERP (localhost uses sample fixtures)
+  loadDropshipFromCache();            // instant: use the last pull if it's under 15 min old
   ensureSelHasData(); buildNav(); syncActive(); refreshFilterOptions(); showCurrentMonth();
+  refreshDropshipAll(false);          // background: refresh stale/missing dropship, then re-render (non-blocking)
 }
 /* ---- viewing gate (app-level password, also enforced server-side) -------- */
 const VIEW_PW_HASH=1684824962; // strHash('98(75)')
